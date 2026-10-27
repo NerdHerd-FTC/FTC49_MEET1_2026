@@ -30,7 +30,7 @@ public class ScoringSubsystem extends SubsystemBase {
         this.Shooter = hardwareMap.get(DcMotorEx.class, "ShooterMotor");
         this.Shooter.setVelocityPIDFCoefficients(kp,ki,kd,kf);
     }
-
+    public void setVelocity (double velocity) {Shooter.setVelocity(velocity);}
     public double getVelocity (){
         return Shooter.getVelocity();
     }
