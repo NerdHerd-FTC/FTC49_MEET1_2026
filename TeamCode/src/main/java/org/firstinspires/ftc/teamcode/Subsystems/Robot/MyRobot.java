@@ -1,178 +1,102 @@
 package org.firstinspires.ftc.teamcode.Subsystems.Robot;
 
-import com.arcrobotics.ftclib.command.CommandScheduler;
-import com.arcrobotics.ftclib.command.ParallelCommandGroup;
-import com.arcrobotics.ftclib.command.Robot;
-import com.arcrobotics.ftclib.command.SequentialCommandGroup;
-import com.arcrobotics.ftclib.command.button.Button;
-import com.arcrobotics.ftclib.command.button.GamepadButton;
-import com.arcrobotics.ftclib.gamepad.GamepadEx;
-import com.arcrobotics.ftclib.gamepad.GamepadKeys;
+import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.hardware.HardwareMap;
-
-import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.Subsystems.Drive.DriveCommand.AutoDriveCommand;
-import org.firstinspires.ftc.teamcode.Subsystems.Drive.DriveCommand.DefaultDriveCommand;
-import org.firstinspires.ftc.teamcode.Subsystems.Drive.DriveCommand.SlowModeCommand;
 import org.firstinspires.ftc.teamcode.Subsystems.Drive.DriveSubsystem;
 import org.firstinspires.ftc.teamcode.Subsystems.Intake.Intake;
-import org.firstinspires.ftc.teamcode.Subsystems.Intake.Intake.IntakeState;
-import org.firstinspires.ftc.teamcode.Subsystems.Intake.IntakeCommands.ActuateIntakeCommand;
-import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringCommands.SpinScoringIntakeCommand;
-import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringCommands.SpinShooterCommand;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringIntakeSubsystem;
+import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringIntakeSubsystem.ScoringIntakeState;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringSubsystem;
+import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ShootingConfig;
+import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ShotTargeting;
 
-public class MyRobot extends Robot {
-    DriveSubsystem drive;
-    Intake intake;
-    ScoringSubsystem shooter;
-    ScoringIntakeSubsystem scoringIntake;
-    DefaultDriveCommand defaultDriveCommand;
-    SlowModeCommand slowModeCommand;
+public class MyRobot {
+    private final LinearOpMode opMode;
+    private final DriveSubsystem drive;
+    private final Intake intake;
+    private final ScoringSubsystem shooter;
+    private final ScoringIntakeSubsystem feeder;
+    private final ShotTargeting targeting = new ShotTargeting();
+    private ShotTargeting.Solution shot;
+    private boolean aiming;
+    private ScoringIntakeState feederState = ScoringIntakeState.INIT;
+    private String mode = "Manual drive";
 
-    public LinearOpMode opMode;
-
-    public HardwareMap hardwareMap;
-    public Telemetry telemetry;
-
-    public GamepadEx driver;
-    public GamepadEx operator;
-
-    public enum TeleopMode {
-        FIELD,
-        ROBOT
-    }
-    public MyRobot (LinearOpMode opMode, TeleopMode mode) {
+    public MyRobot(LinearOpMode opMode, Pose startPose) {
         this.opMode = opMode;
-        this.hardwareMap = opMode.hardwareMap;
-        this.telemetry = opMode.telemetry;
-        this.driver = new GamepadEx(opMode.gamepad1);
-        this.operator = new GamepadEx(opMode.gamepad2);
-        initTele(mode);
+        drive = new DriveSubsystem(opMode.hardwareMap, startPose);
+        intake = new Intake(opMode.hardwareMap);
+        shooter = new ScoringSubsystem(opMode.hardwareMap);
+        feeder = new ScoringIntakeSubsystem(opMode.hardwareMap);
     }
 
-    public void initTele (TeleopMode mode){
-        if (mode == TeleopMode.FIELD){
-            drive = new DriveSubsystem(this);
-            intake = new Intake(this.hardwareMap);
-            shooter = new ScoringSubsystem(this.hardwareMap);
-            scoringIntake = new ScoringIntakeSubsystem(this.hardwareMap);
-            drive.setFieldOriented(true);
+    public void update(double targetX, double targetY, String shots, boolean calibrated) {
+        drive.updatePose();
+        shot = targeting.calculate(drive.getPose(), targetX, targetY, shots, calibrated);
+        shooter.periodic(); // Apply live Panels PIDF edits.
+        shooter.setVelocity(shot.velocityTicksPerSecond); // Every loop, in every driving mode.
 
-            defaultDriveCommand = new DefaultDriveCommand(drive,
-                    driver::getLeftX,
-                    driver::getLeftY,
-                    driver::getRightX
-            );
+        boolean wasAiming = aiming;
+        aiming = false;
+        feederState = ScoringIntakeState.INIT;
+        intake.setState(opMode.gamepad1.x ? Intake.IntakeState.FORWARD : Intake.IntakeState.BACKWARD);
 
-            slowModeCommand = new SlowModeCommand(drive,
-                    driver::getLeftX,
-                    driver::getLeftY,
-                    driver::getRightX
-            );
-
-            CommandScheduler.getInstance().setDefaultCommand(drive, defaultDriveCommand);
-            CommandScheduler.getInstance().setDefaultCommand(shooter, new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD));
-            CommandScheduler.getInstance().setDefaultCommand(intake, new ActuateIntakeCommand(intake, IntakeState.BACKWARD));
-            Button driverSlowMode = new GamepadButton(driver, GamepadKeys.Button.LEFT_BUMPER);
-            Button shooterStart = new GamepadButton(operator, GamepadKeys.Button.RIGHT_BUMPER);
-            Button intakeRestart = new GamepadButton(operator, GamepadKeys.Button.DPAD_UP);
-            Button intakeReverse = new GamepadButton(driver, GamepadKeys.Button.X);
-
-            driverSlowMode
-                    .whenPressed(slowModeCommand)
-                    .whenReleased(defaultDriveCommand);
-            
-            /*autoDrive
-                    .whenPressed(new AutoDriveCommand(drive))
-                            .whenReleased(defaultDriveCommand);*/
-            shooterStart
-                    .whenPressed(
-                            new ParallelCommandGroup
-                                    (
-                                            new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD),
-                                            new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.SHOOT)
-                                    ))
-                            .whenReleased(new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT));
-
-            intakeReverse
-                    .whenPressed(
-                            new ParallelCommandGroup
-                                    (
-                                            new ActuateIntakeCommand(intake, IntakeState.FORWARD),
-                                            new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.REVERSE)
-                                    ))
-                    .whenReleased(
-                            new ParallelCommandGroup
-                                    (
-                                            new ActuateIntakeCommand(intake, IntakeState.BACKWARD),
-                                            new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT)
-                                    ));
-
-            /*shooterStop
-                    .whenPressed(new ParallelCommandGroup
-                            (
-                                    new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT)
-                            ));*/
-
-        }if (mode == TeleopMode.ROBOT){
-            drive = new DriveSubsystem(this);
-            intake = new Intake(this.hardwareMap);
-            shooter = new ScoringSubsystem(this.hardwareMap);
-            scoringIntake = new ScoringIntakeSubsystem(this.hardwareMap);
-            drive.setFieldOriented(false);
-
-            defaultDriveCommand = new DefaultDriveCommand(drive,
-                    driver::getLeftX,
-                    driver::getLeftY,
-                    driver::getRightX
-            );
-
-            slowModeCommand = new SlowModeCommand(drive,
-                    driver::getLeftX,
-                    driver::getLeftY,
-                    driver::getRightX
-            );
-
-            CommandScheduler.getInstance().setDefaultCommand(drive, defaultDriveCommand);
-            CommandScheduler.getInstance().setDefaultCommand(shooter, new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD));
-            CommandScheduler.getInstance().setDefaultCommand(intake, new ActuateIntakeCommand(intake, IntakeState.BACKWARD));
-            Button driverSlowMode = new GamepadButton(driver, GamepadKeys.Button.LEFT_BUMPER);
-            Button shooterStart = new GamepadButton(operator, GamepadKeys.Button.RIGHT_BUMPER);
-            Button autoDrive = new GamepadButton(driver, GamepadKeys.Button.DPAD_UP);
-            Button shooterReverse = new GamepadButton(operator, GamepadKeys.Button.A);
-            Button intakeShoot = new GamepadButton(driver, GamepadKeys.Button.X);
-            Button intakeReverse = new GamepadButton(driver, GamepadKeys.Button.DPAD_DOWN);
-
-            driverSlowMode
-                    .whenPressed(slowModeCommand)
-                    .whenReleased(defaultDriveCommand);
-
-            /*autoDrive
-                    .whenPressed(new AutoDriveCommand(drive))
-                            .whenReleased(defaultDriveCommand);*/
-            shooterStart
-                    .whenPressed(
-                            new ParallelCommandGroup
-                                    (
-                                            new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD),
-                                            new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.SHOOT)
-                                    ))
-                    .whenReleased(new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT));
-
-            shooterReverse
-                    .whenPressed(new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.BACKWARD))
-                    .whenReleased(new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT));;
-
-            /*shooterStop
-                    .whenPressed(new ParallelCommandGroup
-                            (
-                                    new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT)
-                            ));*/
-
+        // Priority: reverse > manual shot > automatic shot > normal manual driving.
+        if (opMode.gamepad1.x) {
+            manualDrive();
+            feederState = ScoringIntakeState.REVERSE;
+            mode = "Reverse";
+        } else if (opMode.gamepad2.left_trigger > ShootingConfig.triggerThreshold) {
+            manualDrive();
+            feederState = ScoringIntakeState.SHOOT;
+            mode = "Manual shot";
+        } else if (opMode.gamepad2.right_trigger > ShootingConfig.triggerThreshold) {
+            aiming = true;
+            if (!wasAiming) drive.beginAim();
+            drive.driveToHeading(shot.headingRadians);
+            if (shot.ready(shooter.getVelocity())) feederState = ScoringIntakeState.SHOOT;
+            mode = "Auto aim";
+        } else {
+            manualDrive();
+            mode = "Manual drive";
         }
+        feeder.setScoringIntakeState(feederState);
     }
 
+    public void resetPose(Pose pose) {
+        drive.setPose(pose);
+        aiming = false;
+    }
+
+    private void manualDrive() {
+        double scale = opMode.gamepad1.left_bumper ? 0.5 : 1.0;
+        drive.setDrivePower(opMode.gamepad1.left_stick_x * scale,
+                -opMode.gamepad1.left_stick_y * scale, opMode.gamepad1.right_stick_x * scale);
+    }
+
+    public void showTelemetry(String alliance, boolean left) {
+        Pose pose = drive.getPose();
+        double actual = shooter.getVelocity();
+        opMode.telemetry.addData("TeleOp / cell", "%s / %s", alliance, left ? "LEFT" : "RIGHT");
+        opMode.telemetry.addData("Pedro pose (in, deg)", "%.2f, %.2f, %.1f",
+                pose.x(), pose.y(), Math.toDegrees(pose.heading()));
+        opMode.telemetry.addData("Distance (in)", "%.2f", shot.distanceIn);
+        opMode.telemetry.addData("Aim heading / error (deg)", "%.2f / %.2f",
+                Math.toDegrees(shot.headingRadians), Math.toDegrees(shot.errorRadians));
+        opMode.telemetry.addData("Shooter target / actual (ticks/s)", "%.1f / %.1f",
+                shooter.getTargetVelocity(), actual);
+        opMode.telemetry.addData("Mode / feeder", "%s / %s", mode, feederState);
+        opMode.telemetry.addData("Pose reset", "Driver Y: corner pose");
+        opMode.telemetry.addData("Auto ready", shot.ready(actual));
+        opMode.telemetry.addData("Warning", shot.warning == null ? "None" : shot.warning);
+        opMode.telemetry.addData("PIDF", shooter.isPidfValid() ? "Applied" : "Invalid edit; keeping last gains");
+        opMode.telemetry.update();
+    }
+
+    public void stopAll() {
+        drive.stop();
+        shooter.setVelocity(0);
+        feeder.setScoringIntakeState(ScoringIntakeState.INIT);
+        intake.setState(Intake.IntakeState.INIT);
+    }
 }

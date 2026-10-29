@@ -1,15 +1,11 @@
 package org.firstinspires.ftc.teamcode.Subsystems.Scoring;
 
-import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import org.firstinspires.ftc.teamcode.Subsystems.Robot.MyRobot;
-
 @Configurable
-public class ScoringIntakeSubsystem extends SubsystemBase {
+public class ScoringIntakeSubsystem {
     public DcMotor IntakeBack;
     public double INIT = 0;
     public static double SHOOT = -1;

@@ -67,10 +67,14 @@ public class Constants {
             }
     );
     public static Follower create(HardwareMap h) {
+        return create(h, new Foresight(foresightConfig));
+    }
+
+    public static Follower create(HardwareMap h, Foresight algorithm) {
         return new Follower(
                 new PinpointLocalizer(h, localizerConfig),
                 new Mecanum(h, driveConfig),
-                new Foresight(foresightConfig)
+                algorithm
         );
     }
 }

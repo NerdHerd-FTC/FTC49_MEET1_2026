@@ -135,6 +135,7 @@ public class AutoPath extends LinearOpMode {
         schedule(autoRoutine());
 
         while (opModeIsActive()) {
+            shooter.periodic();
             Scheduler.execute();
             follower.update();
 

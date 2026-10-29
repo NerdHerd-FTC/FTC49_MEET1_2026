@@ -1,24 +1,17 @@
 package org.firstinspires.ftc.teamcode.Subsystems.Scoring;
 
-import com.arcrobotics.ftclib.command.SubsystemBase;
-import com.bylazar.configurables.annotations.Configurable;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import org.firstinspires.ftc.teamcode.Subsystems.Intake.Intake;
-import org.firstinspires.ftc.teamcode.Subsystems.Robot.MyRobot;
-@Configurable
-public class ScoringSubsystem extends SubsystemBase {
+public class ScoringSubsystem {
     public DcMotorEx Shooter;
-    public DcMotor IntakeBack;
-    public double INIT = 0;
-    public static double FORWARD = 950;
-    public static double BACKWARD = -950;
-    public static double kp = 150;// 170
-    public static double ki = 0;
-    public static double kd = 0;
-    public static double kf = 0;// 0
+    private double targetVelocity;
+    private boolean pidfValid;
+
+    private double appliedKp = Double.NaN;
+    private double appliedKi = Double.NaN;
+    private double appliedKd = Double.NaN;
+    private double appliedKf = Double.NaN;
 
     public enum ShooterState{
         INIT,
@@ -28,7 +21,33 @@ public class ScoringSubsystem extends SubsystemBase {
 
     public ScoringSubsystem (HardwareMap hardwareMap){
         this.Shooter = hardwareMap.get(DcMotorEx.class, "ShooterMotor");
-        this.Shooter.setVelocityPIDFCoefficients(kp,ki,kd,kf);
+        periodic();
+    }
+
+    public void periodic() {
+        // Panels edits the fields; forward changed coefficients to the motor controller.
+        double currentKp = ShootingConfig.kp;
+        double currentKi = ShootingConfig.ki;
+        double currentKd = ShootingConfig.kd;
+        double currentKf = ShootingConfig.kf;
+        pidfValid = Double.isFinite(currentKp) && Double.isFinite(currentKi)
+                && Double.isFinite(currentKd) && Double.isFinite(currentKf);
+        if (pidfValid && (currentKp != appliedKp || currentKi != appliedKi
+                || currentKd != appliedKd || currentKf != appliedKf)) {
+            Shooter.setVelocityPIDFCoefficients(currentKp, currentKi, currentKd, currentKf);
+            appliedKp = currentKp;
+            appliedKi = currentKi;
+            appliedKd = currentKd;
+            appliedKf = currentKf;
+        }
+    }
+
+    public double getTargetVelocity() { return targetVelocity; }
+    public boolean isPidfValid() { return pidfValid; }
+
+    public void setVelocity(double velocity) {
+        targetVelocity = Double.isFinite(velocity) ? velocity : 0;
+        Shooter.setVelocity(targetVelocity);
     }
 
     public double getVelocity (){
@@ -39,16 +58,16 @@ public class ScoringSubsystem extends SubsystemBase {
         double vel = 0;
         switch (state) {
             case INIT:
-                vel = INIT;
+                vel = 0;
                 break;
             case FORWARD:
-                vel = FORWARD;
+                vel = ShootingConfig.autonomousVelocityTicksPerSecond;
                 break;
             case BACKWARD:
-                vel = BACKWARD;
+                vel = -ShootingConfig.autonomousVelocityTicksPerSecond;
                 break;
         }
-        Shooter.setVelocity(vel);
+        setVelocity(vel);
     }
 
 }
