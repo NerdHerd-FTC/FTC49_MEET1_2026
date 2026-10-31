@@ -4,13 +4,15 @@ import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.teamcode.Subsystems.Intake.Intake;
 import org.firstinspires.ftc.teamcode.Subsystems.Robot.MyRobot;
 @Configurable
 public class ScoringSubsystem extends SubsystemBase {
-    public DcMotorEx Shooter; //Add another shooter
+    public DcMotorEx ShooterLeft;
+    public DcMotorEx ShooterRight;
     public double INIT = 0;
 
     public static double FORWARD = 950;
@@ -27,12 +29,16 @@ public class ScoringSubsystem extends SubsystemBase {
     }
 
     public ScoringSubsystem (HardwareMap hardwareMap){
-        this.Shooter = hardwareMap.get(DcMotorEx.class, "ShooterMotor");
-        this.Shooter.setVelocityPIDFCoefficients(kp,ki,kd,kf);
+        this.ShooterLeft = hardwareMap.get(DcMotorEx.class, "ShooterMotor");
+        this.ShooterLeft.setVelocityPIDFCoefficients(kp,ki,kd,kf);
+        this.ShooterLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        this.ShooterRight = hardwareMap.get(DcMotorEx.class, "ShooterMotor");
+        this.ShooterRight.setVelocityPIDFCoefficients(kp, ki, kd, kf);
     }
 
     public double getVelocity (){
-        return Shooter.getVelocity();
+        return ShooterLeft.getVelocity();
     }
 
     public void setShooterState (ShooterState state) { //Look into follow of shooter motors
@@ -48,7 +54,8 @@ public class ScoringSubsystem extends SubsystemBase {
                 vel = BACKWARD;
                 break;
         }
-        Shooter.setVelocity(vel);
+        ShooterLeft.setVelocity(vel);
+        ShooterRight.setVelocity(vel);
     }
 
 }
