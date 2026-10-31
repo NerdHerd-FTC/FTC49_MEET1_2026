@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.Subsystems.Drive;
 
+import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.pedropathing.algorithm.Foresight;
 import com.pedropathing.drivetrain.DrivePowers;
 import com.pedropathing.follower.Follower;
@@ -9,7 +10,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ShootingConfig;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 
-public class DriveSubsystem {
+public class DriveSubsystem extends SubsystemBase {
     private final Follower follower;
     private final Foresight holdController;
     private long lastUpdate;

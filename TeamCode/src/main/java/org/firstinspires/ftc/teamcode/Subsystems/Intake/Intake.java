@@ -1,11 +1,12 @@
 package org.firstinspires.ftc.teamcode.Subsystems.Intake;
 
+import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-public class Intake {
+public class Intake extends SubsystemBase {
     public DcMotor IntakeFront;
     public CRServo IntakeServo;
     public double INIT = 0;

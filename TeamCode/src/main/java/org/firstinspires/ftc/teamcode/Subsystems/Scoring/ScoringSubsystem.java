@@ -1,9 +1,10 @@
 package org.firstinspires.ftc.teamcode.Subsystems.Scoring;
 
+import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-public class ScoringSubsystem {
+public class ScoringSubsystem extends SubsystemBase {
     public DcMotorEx Shooter;
     private double targetVelocity;
     private boolean pidfValid;
@@ -24,7 +25,7 @@ public class ScoringSubsystem {
         periodic();
     }
 
-    public void periodic() {
+    @Override public void periodic() {
         // Panels edits the fields; forward changed coefficients to the motor controller.
         double currentKp = ShootingConfig.kp;
         double currentKi = ShootingConfig.ki;

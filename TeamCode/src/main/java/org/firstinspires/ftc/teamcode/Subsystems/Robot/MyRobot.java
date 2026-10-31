@@ -1,16 +1,24 @@
 package org.firstinspires.ftc.teamcode.Subsystems.Robot;
 
+import com.arcrobotics.ftclib.command.CommandScheduler;
+import com.arcrobotics.ftclib.command.FunctionalCommand;
+import com.arcrobotics.ftclib.command.Robot;
+import com.arcrobotics.ftclib.command.RunCommand;
+import com.arcrobotics.ftclib.command.button.Trigger;
 import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import org.firstinspires.ftc.teamcode.Subsystems.Drive.DriveCommand.DefaultDriveCommand;
 import org.firstinspires.ftc.teamcode.Subsystems.Drive.DriveSubsystem;
 import org.firstinspires.ftc.teamcode.Subsystems.Intake.Intake;
+import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringCommands.AimAndShootCommand;
+import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringCommands.SpinShooterCommand;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringIntakeSubsystem;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringIntakeSubsystem.ScoringIntakeState;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringSubsystem;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ShootingConfig;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ShotTargeting;
 
-public class MyRobot {
+public class MyRobot extends Robot {
     private final LinearOpMode opMode;
     private final DriveSubsystem drive;
     private final Intake intake;
@@ -18,60 +26,68 @@ public class MyRobot {
     private final ScoringIntakeSubsystem feeder;
     private final ShotTargeting targeting = new ShotTargeting();
     private ShotTargeting.Solution shot;
-    private boolean aiming;
-    private ScoringIntakeState feederState = ScoringIntakeState.INIT;
+    private final AimAndShootCommand aimAndShoot;
     private String mode = "Manual drive";
 
     public MyRobot(LinearOpMode opMode, Pose startPose) {
+        reset();
+        enable();
         this.opMode = opMode;
         drive = new DriveSubsystem(opMode.hardwareMap, startPose);
         intake = new Intake(opMode.hardwareMap);
         shooter = new ScoringSubsystem(opMode.hardwareMap);
         feeder = new ScoringIntakeSubsystem(opMode.hardwareMap);
+        aimAndShoot = new AimAndShootCommand(drive, feeder, () -> shot, shooter::getVelocity);
+
+        drive.setDefaultCommand(new DefaultDriveCommand(drive,
+                () -> opMode.gamepad1.left_stick_x, () -> -opMode.gamepad1.left_stick_y,
+                () -> opMode.gamepad1.right_stick_x, () -> opMode.gamepad1.left_bumper));
+        shooter.setDefaultCommand(new SpinShooterCommand(shooter, () -> shot.velocityTicksPerSecond));
+        intake.setDefaultCommand(new RunCommand(() -> intake.setState(Intake.IntakeState.BACKWARD), intake));
+        feeder.setDefaultCommand(new RunCommand(() -> feeder.setScoringIntakeState(ScoringIntakeState.INIT), feeder));
+
+        // Priority: reverse > manual shot > automatic shot. Each owns only the hardware it uses.
+        new Trigger(() -> opMode.gamepad1.x).whileActiveContinuous(new FunctionalCommand(
+                () -> {},
+                () -> {
+                    intake.setState(Intake.IntakeState.FORWARD);
+                    feeder.setScoringIntakeState(ScoringIntakeState.REVERSE);
+                },
+                interrupted -> {
+                    intake.setState(Intake.IntakeState.BACKWARD);
+                    feeder.setScoringIntakeState(ScoringIntakeState.INIT);
+                },
+                () -> false, intake, feeder));
+        new Trigger(() -> !opMode.gamepad1.x && manualShotRequested())
+                .whileActiveContinuous(new FunctionalCommand(
+                        () -> {},
+                        () -> feeder.setScoringIntakeState(ScoringIntakeState.SHOOT),
+                        interrupted -> feeder.setScoringIntakeState(ScoringIntakeState.INIT),
+                        () -> false, feeder));
+        new Trigger(() -> !opMode.gamepad1.x && !manualShotRequested() && autoAimRequested())
+                .whileActiveContinuous(aimAndShoot);
     }
 
     public void update(double targetX, double targetY, String shots, boolean calibrated) {
         drive.updatePose();
         shot = targeting.calculate(drive.getPose(), targetX, targetY, shots, calibrated);
-        shooter.periodic(); // Apply live Panels PIDF edits.
-        shooter.setVelocity(shot.velocityTicksPerSecond); // Every loop, in every driving mode.
-
-        boolean wasAiming = aiming;
-        aiming = false;
-        feederState = ScoringIntakeState.INIT;
-        intake.setState(opMode.gamepad1.x ? Intake.IntakeState.FORWARD : Intake.IntakeState.BACKWARD);
-
-        // Priority: reverse > manual shot > automatic shot > normal manual driving.
-        if (opMode.gamepad1.x) {
-            manualDrive();
-            feederState = ScoringIntakeState.REVERSE;
-            mode = "Reverse";
-        } else if (opMode.gamepad2.left_trigger > ShootingConfig.triggerThreshold) {
-            manualDrive();
-            feederState = ScoringIntakeState.SHOOT;
-            mode = "Manual shot";
-        } else if (opMode.gamepad2.right_trigger > ShootingConfig.triggerThreshold) {
-            aiming = true;
-            if (!wasAiming) drive.beginAim();
-            drive.driveToHeading(shot.headingRadians);
-            if (shot.ready(shooter.getVelocity())) feederState = ScoringIntakeState.SHOOT;
-            mode = "Auto aim";
-        } else {
-            manualDrive();
-            mode = "Manual drive";
-        }
-        feeder.setScoringIntakeState(feederState);
+        // FTCLib applies live PIDF in periodic(), polls buttons, and runs the commands.
+        run();
+        mode = opMode.gamepad1.x ? "Reverse" : manualShotRequested() ? "Manual shot"
+                : autoAimRequested() ? "Auto aim" : "Manual drive";
     }
 
     public void resetPose(Pose pose) {
         drive.setPose(pose);
-        aiming = false;
+        drive.beginAim();
     }
 
-    private void manualDrive() {
-        double scale = opMode.gamepad1.left_bumper ? 0.5 : 1.0;
-        drive.setDrivePower(opMode.gamepad1.left_stick_x * scale,
-                -opMode.gamepad1.left_stick_y * scale, opMode.gamepad1.right_stick_x * scale);
+    private boolean manualShotRequested() {
+        return opMode.gamepad2.left_trigger > ShootingConfig.triggerThreshold;
+    }
+
+    private boolean autoAimRequested() {
+        return opMode.gamepad2.right_trigger > ShootingConfig.triggerThreshold;
     }
 
     public void showTelemetry(String alliance, boolean left) {
@@ -85,7 +101,7 @@ public class MyRobot {
                 Math.toDegrees(shot.headingRadians), Math.toDegrees(shot.errorRadians));
         opMode.telemetry.addData("Shooter target / actual (ticks/s)", "%.1f / %.1f",
                 shooter.getTargetVelocity(), actual);
-        opMode.telemetry.addData("Mode / feeder", "%s / %s", mode, feederState);
+        opMode.telemetry.addData("Mode / feeder", "%s / %s", mode, feeder.getState());
         opMode.telemetry.addData("Pose reset", "Driver Y: corner pose");
         opMode.telemetry.addData("Auto ready", shot.ready(actual));
         opMode.telemetry.addData("Warning", shot.warning == null ? "None" : shot.warning);
@@ -94,6 +110,8 @@ public class MyRobot {
     }
 
     public void stopAll() {
+        CommandScheduler.getInstance().cancelAll();
+        reset();
         drive.stop();
         shooter.setVelocity(0);
         feeder.setScoringIntakeState(ScoringIntakeState.INIT);
