@@ -75,7 +75,7 @@ public class MyRobot extends Robot {
 
             CommandScheduler.getInstance().setDefaultCommand(drive, defaultDriveCommand);
             CommandScheduler.getInstance().setDefaultCommand(shooter, new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD));
-            CommandScheduler.getInstance().setDefaultCommand(intake, new ActuateIntakeCommand(intake, IntakeState.BACKWARD));
+            CommandScheduler.getInstance().setDefaultCommand(intake, new ActuateIntakeCommand(intake, IntakeState.FORWARD));
             Button driverSlowMode = new GamepadButton(driver, GamepadKeys.Button.LEFT_BUMPER);
             Button shooterStart = new GamepadButton(operator, GamepadKeys.Button.RIGHT_BUMPER);
             Button intakeRestart = new GamepadButton(operator, GamepadKeys.Button.DPAD_UP);
@@ -101,13 +101,13 @@ public class MyRobot extends Robot {
                     .whenPressed(
                             new ParallelCommandGroup
                                     (
-                                            new ActuateIntakeCommand(intake, IntakeState.FORWARD),
+                                            new ActuateIntakeCommand(intake, IntakeState.BACKWARD),
                                             new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.REVERSE)
                                     ))
                     .whenReleased(
                             new ParallelCommandGroup
                                     (
-                                            new ActuateIntakeCommand(intake, IntakeState.BACKWARD),
+                                            new ActuateIntakeCommand(intake, IntakeState.FORWARD),
                                             new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT)
                                     ));
 
@@ -138,7 +138,7 @@ public class MyRobot extends Robot {
 
             CommandScheduler.getInstance().setDefaultCommand(drive, defaultDriveCommand);
             CommandScheduler.getInstance().setDefaultCommand(shooter, new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD));
-            CommandScheduler.getInstance().setDefaultCommand(intake, new ActuateIntakeCommand(intake, IntakeState.BACKWARD));
+            CommandScheduler.getInstance().setDefaultCommand(intake, new ActuateIntakeCommand(intake, IntakeState.FORWARD));
             Button driverSlowMode = new GamepadButton(driver, GamepadKeys.Button.LEFT_BUMPER);
             Button shooterStart = new GamepadButton(operator, GamepadKeys.Button.RIGHT_BUMPER);
             Button autoDrive = new GamepadButton(driver, GamepadKeys.Button.DPAD_UP);
@@ -157,13 +157,13 @@ public class MyRobot extends Robot {
                     .whenPressed(
                             new ParallelCommandGroup
                                     (
-                                            new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD),
+                                            new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.BACKWARD),
                                             new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.SHOOT)
                                     ))
                     .whenReleased(new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT));
 
             shooterReverse
-                    .whenPressed(new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.BACKWARD))
+                    .whenPressed(new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD))
                     .whenReleased(new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT));;
 
             /*shooterStop
