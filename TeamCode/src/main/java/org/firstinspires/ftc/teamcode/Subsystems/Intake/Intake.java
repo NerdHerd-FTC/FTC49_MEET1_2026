@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class Intake extends SubsystemBase {
     public DcMotor IntakeFront;
-    public CRServo IntakeServo;
+
     public double INIT = 0;
     public double FORWARD = 1;
     public double BACKWARD = -1;
@@ -21,8 +21,8 @@ public class Intake extends SubsystemBase {
 
     public Intake (HardwareMap hardwareMap){
         this.IntakeFront = hardwareMap.get(DcMotor.class, "IntakeFront");
-        this.IntakeServo = hardwareMap.get(CRServo.class, "IntakeServo");
-        this.IntakeServo.setDirection(DcMotorSimple.Direction.REVERSE);
+        this.IntakeFront = hardwareMap.get(DcMotor.class, "IntakeBack");
+
     }
 
     public void setState(IntakeState state) {
@@ -39,6 +39,6 @@ public class Intake extends SubsystemBase {
                 break;
         }
         IntakeFront.setPower(vel);
-        IntakeServo.setPower(vel);
+        ;
     }
 }

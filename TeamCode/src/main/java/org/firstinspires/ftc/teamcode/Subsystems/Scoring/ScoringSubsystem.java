@@ -6,13 +6,14 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class ScoringSubsystem extends SubsystemBase {
     public DcMotorEx Shooter;
+    public DcMotorEx Shooter2;
     private double targetVelocity;
     private boolean pidfValid;
 
     private double appliedKp = Double.NaN;
     private double appliedKi = Double.NaN;
     private double appliedKd = Double.NaN;
-    private double appliedKf = Double.NaN;
+    //private double appliedKf = Double.NaN;
 
     public enum ShooterState{
         INIT,
@@ -34,12 +35,12 @@ public class ScoringSubsystem extends SubsystemBase {
         pidfValid = Double.isFinite(currentKp) && Double.isFinite(currentKi)
                 && Double.isFinite(currentKd) && Double.isFinite(currentKf);
         if (pidfValid && (currentKp != appliedKp || currentKi != appliedKi
-                || currentKd != appliedKd || currentKf != appliedKf)) {
+                || currentKd != appliedKd )) {
             Shooter.setVelocityPIDFCoefficients(currentKp, currentKi, currentKd, currentKf);
             appliedKp = currentKp;
             appliedKi = currentKi;
             appliedKd = currentKd;
-            appliedKf = currentKf;
+            //appliedKf = currentKf;
         }
     }
 
@@ -49,6 +50,7 @@ public class ScoringSubsystem extends SubsystemBase {
     public void setVelocity(double velocity) {
         targetVelocity = Double.isFinite(velocity) ? velocity : 0;
         Shooter.setVelocity(targetVelocity);
+        Shooter2.setVelocity(targetVelocity);
     }
 
     public double getVelocity (){
