@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.Subsystems.Robot;
 
-import com.arcrobotics.ftclib.command.CommandScheduler;
 import com.arcrobotics.ftclib.command.FunctionalCommand;
 import com.arcrobotics.ftclib.command.Robot;
 import com.arcrobotics.ftclib.command.RunCommand;
@@ -110,7 +109,6 @@ public class MyRobot extends Robot {
     }
 
     public void stopAll() {
-        CommandScheduler.getInstance().cancelAll();
         reset();
         drive.stop();
         shooter.setVelocity(0);
