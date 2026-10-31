@@ -1,9 +1,7 @@
 package org.firstinspires.ftc.teamcode.Subsystems.Intake;
 
 import com.arcrobotics.ftclib.command.SubsystemBase;
-import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class Intake extends SubsystemBase {
@@ -21,7 +19,6 @@ public class Intake extends SubsystemBase {
 
     public Intake (HardwareMap hardwareMap){
         this.IntakeFront = hardwareMap.get(DcMotor.class, "IntakeFront");
-        this.IntakeFront = hardwareMap.get(DcMotor.class, "IntakeBack");
 
     }
 
@@ -39,6 +36,5 @@ public class Intake extends SubsystemBase {
                 break;
         }
         IntakeFront.setPower(vel);
-        ;
     }
 }

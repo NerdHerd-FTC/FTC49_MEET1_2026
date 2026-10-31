@@ -8,7 +8,6 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 @Configurable
 public class ScoringIntakeSubsystem extends SubsystemBase {
     public DcMotor IntakeBack;
-    public DcMotor IntakeFront;
     public double INIT = 0;
     public static double SHOOT = -1;
     public static double REVERSE = 1;
@@ -23,7 +22,6 @@ public class ScoringIntakeSubsystem extends SubsystemBase {
 
     public ScoringIntakeSubsystem(HardwareMap hardwareMap){
         this.IntakeBack = hardwareMap.get(DcMotor.class, "IntakeBack");
-        this.IntakeFront = hardwareMap.get(DcMotor.class, "IntakeFront");
     }
 
 

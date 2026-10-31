@@ -62,19 +62,13 @@ public class Constants {
                 c.maxAchievableStrafeVelocity.set(44.40021459545068);
                 c.naturalForwardDeceleration.set(61.80053139878785);
                 c.naturalStrafeDeceleration.set(77.73762148312699);
-
-                c.timeoutConstraint.set(50.0);
             }
     );
     public static Follower create(HardwareMap h) {
-        return create(h, new Foresight(foresightConfig));
-    }
-
-    public static Follower create(HardwareMap h, Foresight algorithm) {
         return new Follower(
                 new PinpointLocalizer(h, localizerConfig),
                 new Mecanum(h, driveConfig),
-                algorithm
+                new Foresight(foresightConfig)
         );
     }
 }

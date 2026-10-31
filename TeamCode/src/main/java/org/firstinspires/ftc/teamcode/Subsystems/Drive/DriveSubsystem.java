@@ -17,8 +17,8 @@ public class DriveSubsystem extends SubsystemBase {
     private double deltaTime;
 
     public DriveSubsystem(HardwareMap hardwareMap, Pose startPose) {
-        holdController = new Foresight(Constants.foresightConfig);
-        follower = Constants.create(hardwareMap, holdController);
+        follower = Constants.create(hardwareMap);
+        holdController = (Foresight) follower.algorithm();
         follower.setPose(startPose);
     }
 

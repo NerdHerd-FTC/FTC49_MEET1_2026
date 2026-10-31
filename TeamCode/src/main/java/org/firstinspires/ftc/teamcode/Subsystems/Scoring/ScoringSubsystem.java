@@ -2,18 +2,19 @@ package org.firstinspires.ftc.teamcode.Subsystems.Scoring;
 
 import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class ScoringSubsystem extends SubsystemBase {
     public DcMotorEx Shooter;
-    public DcMotorEx Shooter2;
+    // public DcMotorEx Shooter2; // Disabled for now.
     private double targetVelocity;
     private boolean pidfValid;
 
     private double appliedKp = Double.NaN;
     private double appliedKi = Double.NaN;
     private double appliedKd = Double.NaN;
-    //private double appliedKf = Double.NaN;
+    private double appliedKf = Double.NaN;
 
     public enum ShooterState{
         INIT,
@@ -23,6 +24,7 @@ public class ScoringSubsystem extends SubsystemBase {
 
     public ScoringSubsystem (HardwareMap hardwareMap){
         this.Shooter = hardwareMap.get(DcMotorEx.class, "ShooterMotor");
+        this.Shooter.setDirection(DcMotorSimple.Direction.REVERSE);
         periodic();
     }
 
@@ -35,12 +37,12 @@ public class ScoringSubsystem extends SubsystemBase {
         pidfValid = Double.isFinite(currentKp) && Double.isFinite(currentKi)
                 && Double.isFinite(currentKd) && Double.isFinite(currentKf);
         if (pidfValid && (currentKp != appliedKp || currentKi != appliedKi
-                || currentKd != appliedKd )) {
+                || currentKd != appliedKd || currentKf != appliedKf)) {
             Shooter.setVelocityPIDFCoefficients(currentKp, currentKi, currentKd, currentKf);
             appliedKp = currentKp;
             appliedKi = currentKi;
             appliedKd = currentKd;
-            //appliedKf = currentKf;
+            appliedKf = currentKf;
         }
     }
 
@@ -50,7 +52,7 @@ public class ScoringSubsystem extends SubsystemBase {
     public void setVelocity(double velocity) {
         targetVelocity = Double.isFinite(velocity) ? velocity : 0;
         Shooter.setVelocity(targetVelocity);
-        Shooter2.setVelocity(targetVelocity);
+        // Shooter2.setVelocity(targetVelocity);
     }
 
     public double getVelocity (){
