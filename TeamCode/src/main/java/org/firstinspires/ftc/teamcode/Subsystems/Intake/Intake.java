@@ -12,6 +12,7 @@ public class Intake extends SubsystemBase{
     public DcMotor IntakeFront;
     public CRServo IntakeServo;
     public double INIT = 0;
+
     public double FORWARD = 1;
     public double BACKWARD = -1;
 
