@@ -12,12 +12,14 @@ public class Intake extends SubsystemBase{
     public DcMotor IntakeFront;
     public double INIT = 0;
 
-    public double FORWARD = 1;
+    public double FORWARD = 0.35;
+    public double SHOOT = 1;
     public double BACKWARD = -1;
 
     public enum IntakeState{
         INIT,
         FORWARD,
+        SHOOT,
         BACKWARD
     }
 
@@ -36,6 +38,9 @@ public class Intake extends SubsystemBase{
                 break;
             case BACKWARD:
                 vel = BACKWARD;
+                break;
+            case SHOOT:
+                vel = SHOOT;
                 break;
         }
         IntakeFront.setPower(vel);

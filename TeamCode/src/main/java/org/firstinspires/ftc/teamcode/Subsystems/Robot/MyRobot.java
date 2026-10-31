@@ -93,9 +93,9 @@ public class MyRobot extends Robot {
                             new ParallelCommandGroup
                                     (
                                             new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD),
-                                            new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.SHOOT)
+                                            new ActuateIntakeCommand(intake, IntakeState.SHOOT)
                                     ))
-                            .whenReleased(new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT));
+                            .whenReleased(new ActuateIntakeCommand(intake, IntakeState.FORWARD));
 
             intakeReverse
                     .whenPressed(
@@ -139,10 +139,11 @@ public class MyRobot extends Robot {
             CommandScheduler.getInstance().setDefaultCommand(drive, defaultDriveCommand);
             CommandScheduler.getInstance().setDefaultCommand(shooter, new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD));
             CommandScheduler.getInstance().setDefaultCommand(intake, new ActuateIntakeCommand(intake, IntakeState.FORWARD));
+            CommandScheduler.getInstance().setDefaultCommand(scoringIntake, new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.REVERSE));
             Button driverSlowMode = new GamepadButton(driver, GamepadKeys.Button.LEFT_BUMPER);
             Button shooterStart = new GamepadButton(operator, GamepadKeys.Button.RIGHT_BUMPER);
             Button autoDrive = new GamepadButton(driver, GamepadKeys.Button.DPAD_UP);
-            Button shooterReverse = new GamepadButton(operator, GamepadKeys.Button.A);
+            //Button shooterReverse = new GamepadButton(operator, GamepadKeys.Button.A);
             Button intakeShoot = new GamepadButton(driver, GamepadKeys.Button.X);
             Button intakeReverse = new GamepadButton(driver, GamepadKeys.Button.DPAD_DOWN);
 
@@ -157,14 +158,14 @@ public class MyRobot extends Robot {
                     .whenPressed(
                             new ParallelCommandGroup
                                     (
-                                            new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.BACKWARD),
+                                            new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD),
                                             new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.SHOOT)
                                     ))
                     .whenReleased(new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT));
 
-            shooterReverse
-                    .whenPressed(new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD))
-                    .whenReleased(new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT));;
+//            shooterReverse
+//                    .whenPressed(new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.BACKWARD))
+//                    .whenReleased(new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT));;
 
             /*shooterStop
                     .whenPressed(new ParallelCommandGroup

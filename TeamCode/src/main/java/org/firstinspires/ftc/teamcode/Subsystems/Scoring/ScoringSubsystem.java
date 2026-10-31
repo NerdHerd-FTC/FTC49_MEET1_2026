@@ -15,8 +15,8 @@ public class ScoringSubsystem extends SubsystemBase {
     public DcMotorEx ShooterRight;
     public double INIT = 0;
 
-    public static double FORWARD = 950;
-    public static double BACKWARD = -950;
+    public static double FORWARD = 1350;
+    public static double BACKWARD = -1350;
     public static double kp = 150;// 170
     public static double ki = 0;
     public static double kd = 0;
@@ -29,12 +29,13 @@ public class ScoringSubsystem extends SubsystemBase {
     }
 
     public ScoringSubsystem (HardwareMap hardwareMap){
-        this.ShooterLeft = hardwareMap.get(DcMotorEx.class, "ShooterMotor");
+        this.ShooterLeft = hardwareMap.get(DcMotorEx.class, "ShooterLeft");
         this.ShooterLeft.setVelocityPIDFCoefficients(kp,ki,kd,kf);
-        this.ShooterLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        this.ShooterLeft.setDirection(DcMotorSimple.Direction.FORWARD);
 
-        this.ShooterRight = hardwareMap.get(DcMotorEx.class, "ShooterMotor");
+        this.ShooterRight = hardwareMap.get(DcMotorEx.class, "ShooterRight");
         this.ShooterRight.setVelocityPIDFCoefficients(kp, ki, kd, kf);
+        this.ShooterRight.setDirection(DcMotorSimple.Direction.REVERSE);
     }
 
     public double getVelocity (){
