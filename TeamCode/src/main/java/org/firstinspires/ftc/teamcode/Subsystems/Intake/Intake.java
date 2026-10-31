@@ -11,6 +11,7 @@ import org.firstinspires.ftc.teamcode.Subsystems.Robot.MyRobot;
 public class Intake extends SubsystemBase{
     public DcMotor IntakeFront;
     public double INIT = 0;
+
     public double FORWARD = 1;
     public double BACKWARD = -1;
 
