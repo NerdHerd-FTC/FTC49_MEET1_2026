@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringCommands;
 
 import com.arcrobotics.ftclib.command.CommandBase;
 
-import org.firstinspires.ftc.teamcode.Subsystems.Intake.Intake;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringIntakeSubsystem;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringSubsystem;
 
