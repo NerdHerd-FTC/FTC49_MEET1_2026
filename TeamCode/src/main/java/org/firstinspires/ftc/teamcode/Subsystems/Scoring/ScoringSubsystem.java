@@ -10,9 +10,9 @@ import org.firstinspires.ftc.teamcode.Subsystems.Intake.Intake;
 import org.firstinspires.ftc.teamcode.Subsystems.Robot.MyRobot;
 @Configurable
 public class ScoringSubsystem extends SubsystemBase {
-    public DcMotorEx Shooter;
-    public DcMotor IntakeBack;
+    public DcMotorEx Shooter; //Add another shooter
     public double INIT = 0;
+
     public static double FORWARD = 950;
     public static double BACKWARD = -950;
     public static double kp = 150;// 170
@@ -35,7 +35,7 @@ public class ScoringSubsystem extends SubsystemBase {
         return Shooter.getVelocity();
     }
 
-    public void setShooterState (ShooterState state) {
+    public void setShooterState (ShooterState state) { //Look into follow of shooter motors
         double vel = 0;
         switch (state) {
             case INIT:
