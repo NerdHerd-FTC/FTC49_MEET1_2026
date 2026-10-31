@@ -25,9 +25,7 @@ import org.firstinspires.ftc.teamcode.pedro.Constants;
 public class AutoPath extends LinearOpMode {
 
     private Follower follower;
-    private ScoringSubsystem shooter;
     private Intake intake;
-    private ScoringIntakeSubsystem scoringIntake;
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
