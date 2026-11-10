@@ -24,7 +24,7 @@ public class ScoringIntakeSubsystem extends SubsystemBase {
     }
 
     public ScoringIntakeSubsystem(HardwareMap hardwareMap){
-        this.IntakeBack = hardwareMap.get(DcMotor.class, "IntakeBack");
+        this.IntakeBack = hardwareMap.get(DcMotor.class, "IntakeFront");
         IntakeBack.setDirection(DcMotorSimple.Direction.REVERSE);
     }
 

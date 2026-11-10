@@ -12,8 +12,8 @@ public class Intake extends SubsystemBase{
     public DcMotor IntakeFront;
     public double INIT = 0;
 
-    public double FORWARD = 0.35;
-    public double SHOOT = 1;
+    public double FORWARD = 0.75;
+    public double SHOOT = 0.9;
     public double BACKWARD = -1;
 
     public enum IntakeState{
@@ -24,7 +24,7 @@ public class Intake extends SubsystemBase{
     }
 
     public Intake (HardwareMap hardwareMap){
-        this.IntakeFront = hardwareMap.get(DcMotor.class, "IntakeFront");
+        this.IntakeFront = hardwareMap.get(DcMotor.class, "IntakeBack");
     }
 
     public void setState(IntakeState state) {

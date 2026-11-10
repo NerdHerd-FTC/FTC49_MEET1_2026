@@ -16,6 +16,7 @@ import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
+import org.firstinspires.ftc.teamcode.Subsystems.Intake.FlowerIntake;
 import org.firstinspires.ftc.teamcode.Subsystems.Intake.Intake;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringIntakeSubsystem;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringSubsystem;
@@ -28,6 +29,7 @@ public class AutoPath extends LinearOpMode {
     private ScoringSubsystem shooter;
     private Intake intake;
     private ScoringIntakeSubsystem scoringIntake;
+    private FlowerIntake flower;
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
@@ -48,18 +50,14 @@ public class AutoPath extends LinearOpMode {
     // Autonomous routine
     public Command autoRoutine() {
         return sequential(
+                flowerInit(),
                 shootStart(),
                 intakeBalls(),
-                waitMs(1000),
+                waitMs(3000),
                 shootBalls(),
                 waitMs(3000),
                 stopShoot(),
-                follow(follower, path1()),
-                follow(follower, path2()),
-                follow(follower, path3()),
-                shootBalls(),
-                waitMs(1500),
-                stopShoot()
+                waitMs(1500)
                 //follow(follower, path4()),
                 //follow(follower, path5()),
                 //follow(follower, path6())
@@ -72,6 +70,10 @@ public class AutoPath extends LinearOpMode {
         return instant(() -> shooter.setShooterState(ScoringSubsystem.ShooterState.FORWARD))
                 .requiring(shooter);
     }
+    private Command flowerInit() {
+        return instant(() -> flower.setState(FlowerIntake.FlowerState.RETRACT))
+                .requiring(flower);
+    }
     private Command intakeBalls() {
         /*return Command.build()
                 .setExecute(() -> {
@@ -81,7 +83,7 @@ public class AutoPath extends LinearOpMode {
                     return true;
                 })
                 .requiring(intake);*/
-        return instant(() -> intake.setState(Intake.IntakeState.BACKWARD))
+        return instant(() -> intake.setState(Intake.IntakeState.SHOOT))
                 .requiring(intake);
 
     }
@@ -124,6 +126,7 @@ public class AutoPath extends LinearOpMode {
         intake = new Intake(hardwareMap);
         scoringIntake = new ScoringIntakeSubsystem(hardwareMap);
         shooter = new ScoringSubsystem(hardwareMap);
+        flower = new FlowerIntake(hardwareMap);
 
         waitForStart();
 //        schedule(shootStart());
@@ -133,6 +136,7 @@ public class AutoPath extends LinearOpMode {
 //        schedule(waitMs(1000));
 //        schedule(stopShoot());
         schedule(autoRoutine());
+        shooter.setServoPower(1);
 
         while (opModeIsActive()) {
             Scheduler.execute();

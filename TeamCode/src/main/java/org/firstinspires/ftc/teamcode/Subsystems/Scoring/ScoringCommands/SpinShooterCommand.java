@@ -8,6 +8,7 @@ import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringSubsystem;
 public class SpinShooterCommand extends CommandBase {
     private final ScoringSubsystem shooterSubsystem;
     private final ScoringSubsystem.ShooterState targetState;
+    private final double shooterPower = 1;
 
     public SpinShooterCommand(ScoringSubsystem subsystem, ScoringSubsystem.ShooterState inputState){
         this.shooterSubsystem = subsystem;
@@ -18,6 +19,7 @@ public class SpinShooterCommand extends CommandBase {
     @Override
     public void initialize(){
         shooterSubsystem.setShooterState(targetState);
+        shooterSubsystem.setServoPower(shooterPower);
     }
 
     public void execute(){

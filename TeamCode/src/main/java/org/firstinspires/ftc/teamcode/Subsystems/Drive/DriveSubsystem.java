@@ -53,10 +53,10 @@ public class DriveSubsystem extends SubsystemBase {
                     follower.pose().heading()
             );
 
-            ManualDrive.driveOrHold(follower, powers);
+            follower.manual(powers);
             follower.update();
         } else {
-            ManualDrive.driveOrHold(follower,
+            follower.manual(
                     leftY,
                     -leftX,
                     -rightX
