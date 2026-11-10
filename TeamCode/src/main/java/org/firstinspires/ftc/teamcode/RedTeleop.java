@@ -10,7 +10,8 @@ import org.firstinspires.ftc.teamcode.pedro.PoseStorage;
 @TeleOp(name = "RED FIELD", group = "AA_Drive_Code")
 public class RedTeleop extends LinearOpMode {
     @Override public void runOpMode() throws InterruptedException {
-        MyRobot robot = new MyRobot(this, startingPose());
+        // Auto zeroed the turret encoder; without an auto, set the turret to turretStartDeg before INIT.
+        MyRobot robot = new MyRobot(this, startingPose(), PoseStorage.redPose == null);
         boolean left = false;
         boolean resetHeld = false;
         try {

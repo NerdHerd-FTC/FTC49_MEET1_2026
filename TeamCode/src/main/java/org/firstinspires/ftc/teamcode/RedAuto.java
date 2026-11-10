@@ -14,6 +14,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ShootingConfig;
+import org.firstinspires.ftc.teamcode.Subsystems.Scoring.TurretSubsystem;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.pedro.PoseStorage;
 
@@ -40,6 +41,8 @@ public class RedAuto extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         Scheduler.reset();
         follower = Constants.create(hardwareMap);
+        // Put the turret at turretStartDeg before INIT: this zeros its encoder for auto and TeleOp.
+        TurretSubsystem turret = new TurretSubsystem(hardwareMap, true);
         try {
             // Set this alliance's Start values in Panels BEFORE INIT to match placement.
             start = poseFactory.of(ShootingConfig.redStartXIn, ShootingConfig.redStartYIn,
@@ -56,12 +59,15 @@ public class RedAuto extends LinearOpMode {
             // Keep updating even after the paths finish, until FTC STOP.
             while (opModeIsActive()) {
                 Scheduler.execute();
+                // Hold the turret at 0 so it doesn't swing loose while driving paths.
+                turret.center();
                 follower.update();
                 PoseStorage.redPose = follower.pose();
                 showPose();
             }
         } finally {
             follower.drivetrain.stop();
+            turret.stop();
             Scheduler.reset();
             // Sample odometry without issuing another drive command after STOP.
             follower.localizer.update();

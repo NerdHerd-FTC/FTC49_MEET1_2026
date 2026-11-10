@@ -6,13 +6,15 @@ All live settings are in `Subsystems/Scoring/ShootingConfig.java`.
 ## Controls
 
 - Operator LB selects LEFT, RB selects RIGHT, from their own alliance station looking onto the field. Selection persists; default is RIGHT.
-- Operator RT: align and feed immediately when heading error is within ±2.5° inclusive and actual shooter speed is within tolerance. No timer or stillness requirement.
-- Operator LT alone: feed while keeping manual driving; bypass automatic readiness. LT wins over RT.
-- Driver X: reverse intake/feeder and keep manual driving. X wins over both triggers.
+- Turret: the motor turret always points at the selected target from odometry. Every loop it recalculates the robot-relative target angle from the current pose, then sets power = PID(target − measured angle). No button, and the drivetrain is never turned to aim.
+- Wrap-around: of every equivalent target (angle ± 360°) inside `turretMinDeg..turretMaxDeg`, the turret goes to the one nearest its current angle, never past a limit. If none fits, it stops at the closest limit and telemetry says to turn the robot.
+- Operator LT: any press feeds immediately; no readiness checks. Telemetry "Turret on target" shows whether the turret is within `turretToleranceDeg` of its command.
+- Turret start: turret angle = `turretStartDeg` + encoder ticks / `turretTicksPerDeg`. Put the turret at `turretStartDeg` before INIT of any auto; TeleOp keeps that count. If TeleOp runs without an auto first in this app session, put it there before TeleOp INIT.
+- Driver X: reverse intake/feeder and keep manual driving. X wins over LT.
 - Driver LB: half-speed manual driving.
 - Driver Y: set the current X/Y/heading to that alliance's configured corner pose, once per press. Place the robot at the measured corner position and facing before pressing.
 - Shooter speed follows distance continuously, including while driving, aiming, reversing or being pushed. Front intake runs continuously except when reversed.
-- Release shooting triggers: manual driving and stopped feeder.
+- Release LT: feeder stops.
 - Both TeleOps use the same Pedro field-centric axes and current global heading, with no alliance joystick offset.
 
 ## Configuration
@@ -21,29 +23,33 @@ All live settings are in `Subsystems/Scoring/ShootingConfig.java`.
 |---|---|
 | `redStartXIn/YIn/HeadingDeg`, `blueStartXIn/YIn/HeadingDeg` | Actual auto starting placement; also TeleOp fallback if no auto pose was saved. Set before INIT. |
 | `redResetXIn/YIn/HeadingDeg`, `blueResetXIn/YIn/HeadingDeg` | Driver Y corner-reset pose, independent per alliance and editable live in Panels. All six defaults are zero placeholders; measure Pedro's robot reference point at the corner and its heading before using. |
-| `shooterForwardIn`, `shooterLeftIn` | Shooter release point relative to Pedro's robot reference point. Forward/left are positive. |
-| `shooterYawOffsetDeg` | Shooter direction relative to robot forward; CCW positive. |
+| `shooterForwardIn`, `shooterLeftIn` | Turret pivot relative to Pedro's robot reference point. Forward/left are positive. |
+| `shooterYawOffsetDeg` | Shooter direction at turret angle 0 relative to robot forward; CCW positive. |
+| `turretStartDeg` | Physical turret angle at INIT (0 forward, 90 left). |
+| `turretTicksPerDeg` | Measure with TURRET TUNER. Placeholder 1.494 (537.7 ticks/rev, 1:1). |
+| `turretReversed` | Flip if positive power turns the turret clockwise (TURRET TUNER shows negative ticks for a CCW turn). |
+| `turretMinDeg`, `turretMaxDeg` | Safe travel limits, robot-relative, CCW positive; default ±180. Up to 720° total; wider than 360° (slip ring/slack) gives true wrap-around. |
+| `turretKp/Ki/Kd` | Turret PID on angle error in degrees → power; defaults 0.02 / 0 / 0.001. |
+| `turretMaxPower` | Turret power cap; default 0.6. |
+| `turretToleranceDeg` | Turret "on target" telemetry window; default 2°. |
 | Four `red/blueLeft/RightXIn/YIn` pairs | Aim-point coordinates for each alliance/cell. |
 | Four `...Shots` strings | Measured distance:velocity pairs, e.g. `10:500,50:900,100:1200`, inches:ticks/second. Distances increase; speeds are positive. |
 | Four `...Calibrated` flags | Telemetry reminders only; false does not block feeding. |
-| `headingToleranceDeg`, `velocityToleranceTicksPerSecond` | Automatic feeding windows; defaults 2.5° and 50 ticks/second. |
-| `triggerThreshold` | Trigger activation level; default 0.2. |
-| `aimHeadingScale` | Pedro heading-hold output scaling, 0–1; default 0.35. |
-| `maxVelocityTicksPerSecond` | Reject a calculated target above this limit; provisional default 2000. |
-| `autonomousVelocityTicksPerSecond` | Fixed speed used by the existing legacy AutoPath1 mechanism commands; default 950. |
 | `kp/ki/kd/kf` | Live shooter PIDF; changed valid values are sent to the motor controller. |
 
 Starting poses, shooter offsets and shot tables are placeholders. The shipped `70:950,76.05:1000` tables reproduce two points on the old `origin/Shooting_Formula` equation; they are not measured shots. Measure shots at several distances and approach angles for each cell, then update the tables. Record physical release height and launch angle in your calibration notes; changing them requires recalibration. They are not live controls because this code uses measured speed tables.
 
-Outside a table's range, speed clamps to its nearest endpoint and telemetry warns; automatic feeding is still allowed when heading/speed are ready. Invalid tables, non-finite geometry or an invalid/exceeded speed limit command zero speed and prevent automatic feeding. LT bypasses readiness but still uses the same distance-derived speed; it cannot reconstruct distance from broken odometry. Invalid PIDF edits retain the last valid gains while speed updates continue.
+Outside a table's range, speed clamps to its nearest endpoint and telemetry warns. Invalid tables or non-finite geometry command zero speed. There is no speed cap: keep table speeds within what the flywheel can reach. LT always feeds, using the same distance-derived speed; it cannot reconstruct distance from broken odometry. On invalid geometry the turret brakes in place. Invalid PIDF edits retain the last valid gains while speed updates continue.
 
 ## Code flow
 
 - `RedTeleop.java` / `BlueTeleop.java`: initialize from their own saved pose, read bumper selection and select their own target/table.
-- `MyRobot.update()`: update odometry, calculate the shot, apply live PIDF and speed, then handle X → LT → RT → manual driving in that order.
-- `ShotTargeting.java`: plain geometry/interpolation helper. Its result has a boolean `ready()`; warning text does not control feeding.
-- `DriveSubsystem.java`: Pedro field-centric manual drive and heading-only aim. Aiming uses Pedro Foresight hold at current X/Y with zero translational scaling, so it does not pull back against pushing. The same odometry sample determines aim, speed and feed readiness.
-- `ScoringSubsystem.java`: motor velocity and live PIDF. Speed is set directly each loop.
+- `MyRobot.update()`: update odometry, calculate the shot, apply live PIDF and speed, aim the turret, then handle X → LT.
+- `ShotTargeting.java`: plain geometry/interpolation helper. Warning text does not control feeding.
+- `DriveSubsystem.java`: Pedro field-centric manual drive only.
+- `TurretSubsystem.java` / `AimTurretCommand.java`: pick the wrap-around target (`ShotTargeting.nearestTurretAngle`) and run one PID step on `TurretMotor` each loop. The same odometry sample determines turret angle and speed.
+- `TurretTuner.java` (TURRET TUNER): during INIT the motor floats; turn the turret exactly 90° CCW by hand and read ticks/deg. After START, dpad left/up/right/down = 90/0/−90/180° to tune PID live.
+- `ScoringSubsystem.java`: motor velocity and live PIDF. Speed is set directly each loop. Autos set their own speed per shot with `setVelocity()`, e.g. AutoPath1's `shootStart(950)`.
 - STOP uses the normal FTC loop exit and directly stops drive, shooter and intake outputs.
 
 ## Auto templates and pose handoff
@@ -76,4 +82,4 @@ These are nominal engineering aim points, not surveyed scoring centers. From a 1
 
 `./gradlew :TeamCode:testDebugUnitTest :TeamCode:assembleDebug`
 
-On the robot: verify each alliance/cell and turn direction, push sideways during RT aiming, test ±2.5° boundaries and speed recovery, and check LT/X priority and trigger release. There is no dwell or hysteresis, so watch for feeder chatter at the tolerance boundary. Moving-shot accuracy needs physical testing; projectile velocity compensation is not implemented.
+On the robot: first run TURRET TUNER to set `turretTicksPerDeg` and `turretReversed`, set safe limits for your wiring, then tune PID starting at low `turretMaxPower`. Then verify each alliance/cell, that the turret stays on target while driving and rotating, the limit warning, auto→TeleOp turret zero handoff, speed recovery, and LT/X priority. Moving-shot accuracy needs physical testing; projectile velocity compensation is not implemented.

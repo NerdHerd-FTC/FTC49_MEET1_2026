@@ -16,11 +16,6 @@ public class ScoringSubsystem extends SubsystemBase {
     private double appliedKd = Double.NaN;
     private double appliedKf = Double.NaN;
 
-    public enum ShooterState{
-        INIT,
-        FORWARD,
-        BACKWARD
-    }
 
     public ScoringSubsystem (HardwareMap hardwareMap){
         this.Shooter = hardwareMap.get(DcMotorEx.class, "ShooterMotor");
@@ -57,22 +52,6 @@ public class ScoringSubsystem extends SubsystemBase {
 
     public double getVelocity (){
         return Shooter.getVelocity();
-    }
-
-    public void setShooterState (ShooterState state) {
-        double vel = 0;
-        switch (state) {
-            case INIT:
-                vel = 0;
-                break;
-            case FORWARD:
-                vel = ShootingConfig.autonomousVelocityTicksPerSecond;
-                break;
-            case BACKWARD:
-                vel = -ShootingConfig.autonomousVelocityTicksPerSecond;
-                break;
-        }
-        setVelocity(vel);
     }
 
 }

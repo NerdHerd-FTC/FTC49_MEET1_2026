@@ -9,13 +9,13 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import org.firstinspires.ftc.teamcode.Subsystems.Drive.DriveCommand.DefaultDriveCommand;
 import org.firstinspires.ftc.teamcode.Subsystems.Drive.DriveSubsystem;
 import org.firstinspires.ftc.teamcode.Subsystems.Intake.Intake;
-import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringCommands.AimAndShootCommand;
+import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringCommands.AimTurretCommand;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringCommands.SpinShooterCommand;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringIntakeSubsystem;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringIntakeSubsystem.ScoringIntakeState;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringSubsystem;
-import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ShootingConfig;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ShotTargeting;
+import org.firstinspires.ftc.teamcode.Subsystems.Scoring.TurretSubsystem;
 
 public class MyRobot extends Robot {
     private final LinearOpMode opMode;
@@ -23,12 +23,13 @@ public class MyRobot extends Robot {
     private final Intake intake;
     private final ScoringSubsystem shooter;
     private final ScoringIntakeSubsystem feeder;
+    private final TurretSubsystem turret;
     private final ShotTargeting targeting = new ShotTargeting();
     private ShotTargeting.Solution shot;
-    private final AimAndShootCommand aimAndShoot;
     private String mode = "Manual drive";
 
-    public MyRobot(LinearOpMode opMode, Pose startPose) {
+    /** @param zeroTurret true only when the turret sits at turretStartDeg (no auto ran this session). */
+    public MyRobot(LinearOpMode opMode, Pose startPose, boolean zeroTurret) {
         reset();
         enable();
         this.opMode = opMode;
@@ -36,16 +37,18 @@ public class MyRobot extends Robot {
         intake = new Intake(opMode.hardwareMap);
         shooter = new ScoringSubsystem(opMode.hardwareMap);
         feeder = new ScoringIntakeSubsystem(opMode.hardwareMap);
-        aimAndShoot = new AimAndShootCommand(drive, feeder, () -> shot, shooter::getVelocity);
+        turret = new TurretSubsystem(opMode.hardwareMap, zeroTurret);
 
         drive.setDefaultCommand(new DefaultDriveCommand(drive,
                 () -> opMode.gamepad1.left_stick_x, () -> -opMode.gamepad1.left_stick_y,
                 () -> opMode.gamepad1.right_stick_x, () -> opMode.gamepad1.left_bumper));
         shooter.setDefaultCommand(new SpinShooterCommand(shooter, () -> shot.velocityTicksPerSecond));
+        // Turret always tracks the selected target; no button needed and the drive is never turned.
+        turret.setDefaultCommand(new AimTurretCommand(turret, () -> shot));
         intake.setDefaultCommand(new RunCommand(() -> intake.setState(Intake.IntakeState.BACKWARD), intake));
         feeder.setDefaultCommand(new RunCommand(() -> feeder.setScoringIntakeState(ScoringIntakeState.INIT), feeder));
 
-        // Priority: reverse > manual shot > automatic shot. Each owns only the hardware it uses.
+        // Priority: reverse > shot. Each owns only the hardware it uses.
         new Trigger(() -> opMode.gamepad1.x).whileActiveContinuous(new FunctionalCommand(
                 () -> {},
                 () -> {
@@ -63,8 +66,6 @@ public class MyRobot extends Robot {
                         () -> feeder.setScoringIntakeState(ScoringIntakeState.SHOOT),
                         interrupted -> feeder.setScoringIntakeState(ScoringIntakeState.INIT),
                         () -> false, feeder));
-        new Trigger(() -> !opMode.gamepad1.x && !manualShotRequested() && autoAimRequested())
-                .whileActiveContinuous(aimAndShoot);
     }
 
     public void update(double targetX, double targetY, String shots, boolean calibrated) {
@@ -73,20 +74,15 @@ public class MyRobot extends Robot {
         // FTCLib applies live PIDF in periodic(), polls buttons, and runs the commands.
         run();
         mode = opMode.gamepad1.x ? "Reverse" : manualShotRequested() ? "Manual shot"
-                : autoAimRequested() ? "Auto aim" : "Manual drive";
+                : "Manual drive";
     }
 
     public void resetPose(Pose pose) {
         drive.setPose(pose);
-        drive.beginAim();
     }
 
     private boolean manualShotRequested() {
-        return opMode.gamepad2.left_trigger > ShootingConfig.triggerThreshold;
-    }
-
-    private boolean autoAimRequested() {
-        return opMode.gamepad2.right_trigger > ShootingConfig.triggerThreshold;
+        return opMode.gamepad2.left_trigger > 0;
     }
 
     public void showTelemetry(String alliance, boolean left) {
@@ -96,13 +92,15 @@ public class MyRobot extends Robot {
         opMode.telemetry.addData("Pedro pose (in, deg)", "%.2f, %.2f, %.1f",
                 pose.x(), pose.y(), Math.toDegrees(pose.heading()));
         opMode.telemetry.addData("Distance (in)", "%.2f", shot.distanceIn);
-        opMode.telemetry.addData("Aim heading / error (deg)", "%.2f / %.2f",
-                Math.toDegrees(shot.headingRadians), Math.toDegrees(shot.errorRadians));
+        opMode.telemetry.addData("Turret target / commanded / actual (deg)", "%.2f / %.2f / %.2f",
+                Math.toDegrees(shot.turretRadians), Math.toDegrees(turret.getCommandedAngle()),
+                Math.toDegrees(turret.getAngle()));
+        opMode.telemetry.addData("Turret ticks", turret.getTicks());
         opMode.telemetry.addData("Shooter target / actual (ticks/s)", "%.1f / %.1f",
                 shooter.getTargetVelocity(), actual);
         opMode.telemetry.addData("Mode / feeder", "%s / %s", mode, feeder.getState());
         opMode.telemetry.addData("Pose reset", "Driver Y: corner pose");
-        opMode.telemetry.addData("Auto ready", shot.ready(actual));
+        opMode.telemetry.addData("Turret on target", turret.onTarget());
         opMode.telemetry.addData("Warning", shot.warning == null ? "None" : shot.warning);
         opMode.telemetry.addData("PIDF", shooter.isPidfValid() ? "Applied" : "Invalid edit; keeping last gains");
         opMode.telemetry.update();
@@ -111,6 +109,7 @@ public class MyRobot extends Robot {
     public void stopAll() {
         reset();
         drive.stop();
+        turret.stop();
         shooter.setVelocity(0);
         feeder.setScoringIntakeState(ScoringIntakeState.INIT);
         intake.setState(Intake.IntakeState.INIT);

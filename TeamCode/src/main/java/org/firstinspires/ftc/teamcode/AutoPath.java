@@ -18,6 +18,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import org.firstinspires.ftc.teamcode.Subsystems.Intake.Intake;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringIntakeSubsystem;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringSubsystem;
+import org.firstinspires.ftc.teamcode.Subsystems.Scoring.TurretSubsystem;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 
 @Autonomous(name = "AutoPath1", group = "Autonomous")
@@ -27,6 +28,7 @@ public class AutoPath extends LinearOpMode {
     private ScoringSubsystem shooter;
     private Intake intake;
     private ScoringIntakeSubsystem scoringIntake;
+    private TurretSubsystem turret;
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
@@ -47,7 +49,7 @@ public class AutoPath extends LinearOpMode {
     // Autonomous routine
     public Command autoRoutine() {
         return sequential(
-                shootStart(),
+                shootStart(950), // Flywheel speed in ticks/second for this shot.
                 intakeBalls(),
                 waitMs(1000),
                 shootBalls(),
@@ -67,8 +69,8 @@ public class AutoPath extends LinearOpMode {
 
 
 
-    private Command shootStart() {
-        return instant(() -> shooter.setShooterState(ScoringSubsystem.ShooterState.FORWARD))
+    private Command shootStart(double ticksPerSecond) {
+        return instant(() -> shooter.setVelocity(ticksPerSecond))
                 .requiring(shooter);
     }
     private Command intakeBalls() {
@@ -123,6 +125,8 @@ public class AutoPath extends LinearOpMode {
         intake = new Intake(hardwareMap);
         scoringIntake = new ScoringIntakeSubsystem(hardwareMap);
         shooter = new ScoringSubsystem(hardwareMap);
+        // Put the turret at turretStartDeg before INIT: this zeros its encoder.
+        turret = new TurretSubsystem(hardwareMap, true);
 
         waitForStart();
 //        schedule(shootStart());
@@ -135,6 +139,8 @@ public class AutoPath extends LinearOpMode {
 
         while (opModeIsActive()) {
             shooter.periodic();
+            // Fixed-direction shots: hold the turret at 0, where the old shooter pointed.
+            turret.center();
             Scheduler.execute();
             follower.update();
 

@@ -15,25 +15,23 @@ public final class ShotTargeting {
         double shooterY = pose.y() + ShootingConfig.shooterForwardIn * Math.sin(h)
                 + ShootingConfig.shooterLeftIn * Math.cos(h);
         double distance = Math.hypot(goalX - shooterX, goalY - shooterY);
-        double heading = Math.atan2(goalY - shooterY, goalX - shooterX)
-                - Math.toRadians(ShootingConfig.shooterYawOffsetDeg);
-        double error = wrap(heading - h);
+        // Robot-relative turret angle; the drivetrain is never turned to aim.
+        double turret = wrap(Math.atan2(goalY - shooterY, goalX - shooterX) - h
+                - Math.toRadians(ShootingConfig.shooterYawOffsetDeg));
+        boolean reachable = Double.isFinite(equivalentInRange(turret, 0));
         parseIfChanged(shots);
-        if (!Double.isFinite(distance) || distance < 0.001 || !Double.isFinite(error)) {
-            return new Solution(distance, heading, error, 0, "Invalid pose/target");
+        if (!Double.isFinite(distance) || distance < 0.001 || !Double.isFinite(turret)) {
+            return new Solution(distance, turret, false, 0, "Invalid pose/target");
         }
         if (distances.length < 2) {
-            return new Solution(distance, heading, error, 0, "Invalid shot table");
+            return new Solution(distance, turret, reachable, 0, "Invalid shot table");
         }
         double velocity = interpolate(distance, distances, velocities);
-        double limit = ShootingConfig.maxVelocityTicksPerSecond;
-        if (!Double.isFinite(limit) || limit <= 0 || velocity > limit) {
-            return new Solution(distance, heading, error, 0, "Velocity limit / config");
-        }
-        String warning = !calibrated ? "Cell needs calibration"
+        String warning = !reachable ? "Target outside turret travel; turn robot"
+                : !calibrated ? "Cell needs calibration"
                 : distance < distances[0] || distance > distances[distances.length - 1]
                 ? "Outside calibrated range" : null;
-        return new Solution(distance, heading, error, velocity, warning);
+        return new Solution(distance, turret, reachable, velocity, warning);
     }
 
     private void parseIfChanged(String table) {
@@ -73,32 +71,57 @@ public final class ShotTargeting {
         return v[v.length - 1];
     }
 
+    /**
+     * Wrap-around: of every equivalent angle (desired + k*360) inside the turret limits, the one
+     * nearest the current angle, so the turret takes the shortest legal path. If none fits,
+     * the limit closest to the desired direction. NaN on invalid input or limits.
+     */
+    public static double nearestTurretAngle(double desired, double current) {
+        double best = equivalentInRange(desired, Double.isFinite(current) ? current : 0);
+        if (Double.isFinite(best)) return best;
+        double min = Math.toRadians(ShootingConfig.turretMinDeg);
+        double max = Math.toRadians(ShootingConfig.turretMaxDeg);
+        if (!Double.isFinite(desired) || !Double.isFinite(min) || !Double.isFinite(max) || min > max) {
+            return Double.NaN;
+        }
+        return Math.abs(wrap(desired - min)) <= Math.abs(wrap(desired - max)) ? min : max;
+    }
+
+    private static double equivalentInRange(double desired, double reference) {
+        double min = Math.toRadians(ShootingConfig.turretMinDeg);
+        double max = Math.toRadians(ShootingConfig.turretMaxDeg);
+        if (!Double.isFinite(desired) || !Double.isFinite(reference) || !Double.isFinite(min)
+                || !Double.isFinite(max) || min > max || max - min > 4 * Math.PI) {
+            return Double.NaN;
+        }
+        double best = Double.NaN;
+        double base = desired + 2 * Math.PI * Math.round((reference - desired) / (2 * Math.PI));
+        for (int k = -2; k <= 2; k++) {
+            double candidate = base + 2 * Math.PI * k;
+            if (candidate >= min - 1e-12 && candidate <= max + 1e-12
+                    && (!Double.isFinite(best) || Math.abs(candidate - reference) < Math.abs(best - reference))) {
+                best = candidate;
+            }
+        }
+        return best;
+    }
+
     public static double wrap(double radians) {
         return Math.atan2(Math.sin(radians), Math.cos(radians));
     }
 
     public static final class Solution {
-        public final double distanceIn, headingRadians, errorRadians, velocityTicksPerSecond;
+        public final double distanceIn, turretRadians, velocityTicksPerSecond;
+        public final boolean turretReachable;
         public final String warning;
 
-        public Solution(double distance, double heading, double error, double velocity, String warning) {
+        public Solution(double distance, double turret, boolean reachable, double velocity,
+                String warning) {
             distanceIn = distance;
-            headingRadians = heading;
-            errorRadians = error;
+            turretRadians = turret;
+            turretReachable = reachable;
             velocityTicksPerSecond = velocity;
             this.warning = warning;
-        }
-
-        /** No timer, motion threshold, or exact-zero-angle requirement. */
-        public boolean ready(double actualVelocity) {
-            double headingTolerance = ShootingConfig.headingToleranceDeg;
-            double speedTolerance = ShootingConfig.velocityToleranceTicksPerSecond;
-            return velocityTicksPerSecond > 0 && Double.isFinite(errorRadians)
-                    && Double.isFinite(headingTolerance) && headingTolerance >= 0
-                    && Double.isFinite(speedTolerance) && speedTolerance >= 0
-                    && Math.abs(errorRadians) <= Math.toRadians(headingTolerance) + 1e-12
-                    && Double.isFinite(actualVelocity)
-                    && Math.abs(actualVelocity - velocityTicksPerSecond) <= speedTolerance;
         }
     }
 }
