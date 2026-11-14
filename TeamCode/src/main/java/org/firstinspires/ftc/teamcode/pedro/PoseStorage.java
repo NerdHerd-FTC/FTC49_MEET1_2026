@@ -2,12 +2,16 @@ package org.firstinspires.ftc.teamcode.pedro;
 
 import com.pedropathing.math.Pose;
 
-/** Actual auto ending poses for TeleOp: Pedro field inches and heading in radians. */
+/** Values carried between OpModes: Pedro field inches and heading in radians. */
 public final class PoseStorage {
     private PoseStorage() { }
 
-    // RedAuto/BlueAuto update their own field every loop and on exit, including interrupted runs.
-    // Null means no auto pose has been saved since the Robot Controller app started.
+    // Autos and TeleOps update their own field every loop and on exit, including interrupted runs.
+    // Null means no pose has been saved since the Robot Controller app started.
     public static Pose redPose;
     public static Pose bluePose;
+
+    // True once any OpMode has zeroed the turret encoder at turretStartDeg. The hub keeps the
+    // count between OpModes, so later OpModes must not zero it again wherever the turret is.
+    public static boolean turretZeroed;
 }

@@ -1,15 +1,18 @@
 package org.firstinspires.ftc.teamcode.Subsystems.Intake;
 
 import com.arcrobotics.ftclib.command.SubsystemBase;
+import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+@Configurable
 public class Intake extends SubsystemBase {
     public DcMotor IntakeFront;
 
-    public double INIT = 0;
-    public double FORWARD = 1;
-    public double BACKWARD = -1;
+    // Static so Panels can edit them live.
+    public static double INIT = 0;
+    public static double FORWARD = 1;
+    public static double BACKWARD = -1;
 
     public enum IntakeState{
         INIT,

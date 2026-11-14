@@ -8,12 +8,14 @@ public final class ShotTargeting {
     private double[] distances = new double[0];
     private double[] velocities = new double[0];
 
+    public Solution calculate(Pose pose, Goal goal) {
+        return calculate(pose, goal.x, goal.y, goal.shots, goal.calibrated);
+    }
+
     public Solution calculate(Pose pose, double goalX, double goalY, String shots, boolean calibrated) {
         double h = pose.heading();
-        double shooterX = pose.x() + ShootingConfig.shooterForwardIn * Math.cos(h)
-                - ShootingConfig.shooterLeftIn * Math.sin(h);
-        double shooterY = pose.y() + ShootingConfig.shooterForwardIn * Math.sin(h)
-                + ShootingConfig.shooterLeftIn * Math.cos(h);
+        double shooterX = pivotX(pose);
+        double shooterY = pivotY(pose);
         double distance = Math.hypot(goalX - shooterX, goalY - shooterY);
         // Robot-relative turret angle; the drivetrain is never turned to aim.
         double turret = wrap(Math.atan2(goalY - shooterY, goalX - shooterX) - h
@@ -27,11 +29,42 @@ public final class ShotTargeting {
             return new Solution(distance, turret, reachable, 0, "Invalid shot table");
         }
         double velocity = interpolate(distance, distances, velocities);
-        String warning = !reachable ? "Target outside turret travel; turn robot"
-                : !calibrated ? "Cell needs calibration"
-                : distance < distances[0] || distance > distances[distances.length - 1]
-                ? "Outside calibrated range" : null;
-        return new Solution(distance, turret, reachable, velocity, warning);
+        // Every problem that applies, not just the first.
+        StringBuilder warning = new StringBuilder();
+        if (!reachable) warning.append("Target outside turret travel; turn robot. ");
+        if (distance < distances[0] || distance > distances[distances.length - 1]) {
+            warning.append("Outside calibrated range. ");
+        }
+        if (!calibrated) warning.append("Cell needs calibration.");
+        String text = warning.toString().trim();
+        return new Solution(distance, turret, reachable, velocity, text.isEmpty() ? null : text);
+    }
+
+    /**
+     * Nearest-goal choice with hysteresis: switch only when the other goal is closer to the turret
+     * pivot by at least marginIn, so the turret does not flip back and forth near the midline.
+     */
+    public static boolean pickLeft(Pose pose, Goal left, Goal right, boolean currentlyLeft,
+            double marginIn) {
+        double x = pivotX(pose), y = pivotY(pose);
+        double toLeft = Math.hypot(left.x - x, left.y - y);
+        double toRight = Math.hypot(right.x - x, right.y - y);
+        if (!Double.isFinite(toLeft) || !Double.isFinite(toRight)) return currentlyLeft;
+        double margin = Double.isFinite(marginIn) ? Math.max(0, marginIn) : 0;
+        return currentlyLeft ? toLeft - toRight < margin : toRight - toLeft >= margin;
+    }
+
+    /** Turret pivot position on the field: robot pose plus the pivot offset rotated by heading. */
+    private static double pivotX(Pose pose) {
+        double h = pose.heading();
+        return pose.x() + ShootingConfig.shooterForwardIn * Math.cos(h)
+                - ShootingConfig.shooterLeftIn * Math.sin(h);
+    }
+
+    private static double pivotY(Pose pose) {
+        double h = pose.heading();
+        return pose.y() + ShootingConfig.shooterForwardIn * Math.sin(h)
+                + ShootingConfig.shooterLeftIn * Math.cos(h);
     }
 
     private void parseIfChanged(String table) {
@@ -74,16 +107,18 @@ public final class ShotTargeting {
     /**
      * Wrap-around: of every equivalent angle (desired + k*360) inside the turret limits, the one
      * nearest the current angle, so the turret takes the shortest legal path. If none fits,
-     * the limit closest to the desired direction. NaN on invalid input or limits.
+     * the limit closest to the desired direction. NaN on invalid input or limits (the turret
+     * then brakes), including limits spanning more than 720 degrees.
      */
     public static double nearestTurretAngle(double desired, double current) {
-        double best = equivalentInRange(desired, Double.isFinite(current) ? current : 0);
-        if (Double.isFinite(best)) return best;
         double min = Math.toRadians(ShootingConfig.turretMinDeg);
         double max = Math.toRadians(ShootingConfig.turretMaxDeg);
-        if (!Double.isFinite(desired) || !Double.isFinite(min) || !Double.isFinite(max) || min > max) {
+        if (!Double.isFinite(desired) || !Double.isFinite(min) || !Double.isFinite(max) || min > max
+                || max - min > 4 * Math.PI) {
             return Double.NaN;
         }
+        double best = equivalentInRange(desired, Double.isFinite(current) ? current : 0);
+        if (Double.isFinite(best)) return best;
         return Math.abs(wrap(desired - min)) <= Math.abs(wrap(desired - max)) ? min : max;
     }
 
@@ -108,6 +143,20 @@ public final class ShotTargeting {
 
     public static double wrap(double radians) {
         return Math.atan2(Math.sin(radians), Math.cos(radians));
+    }
+
+    /** One scoring opening: field position plus its own shot table. */
+    public static final class Goal {
+        public final double x, y;
+        public final String shots;
+        public final boolean calibrated;
+
+        public Goal(double x, double y, String shots, boolean calibrated) {
+            this.x = x;
+            this.y = y;
+            this.shots = shots;
+            this.calibrated = calibrated;
+        }
     }
 
     public static final class Solution {

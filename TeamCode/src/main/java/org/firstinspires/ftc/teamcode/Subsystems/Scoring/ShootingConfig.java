@@ -7,16 +7,10 @@ import com.bylazar.configurables.annotations.Configurable;
 public final class ShootingConfig {
     private ShootingConfig() {}
 
-    // Auto starting placement; also TeleOp fallback when no auto pose is saved. Set BEFORE INIT.
-    // These copied placeholders must match actual placement.
-    public static volatile double redStartXIn = 133;
-    public static volatile double redStartYIn = 108;
-    public static volatile double redStartHeadingDeg = 0;
-    public static volatile double blueStartXIn = 133;
-    public static volatile double blueStartYIn = 108;
-    public static volatile double blueStartHeadingDeg = 0;
+    // Start poses come from the auto path (Alliance.RED_START, rotated for blue); no settings here.
 
-    // Driver Y corner reset: PLACEHOLDERS. Measure the robot reference point and facing.
+    // Driver Y corner reset. While X and Y are both 0 (unmeasured), Y does nothing.
+    // Measure the robot reference point and facing at the corner, then enter them.
     public static volatile double redResetXIn = 0;
     public static volatile double redResetYIn = 0;
     public static volatile double redResetHeadingDeg = 0;
@@ -47,6 +41,13 @@ public final class ShootingConfig {
     public static volatile double turretMaxPower = 0.6;
     public static volatile double turretToleranceDeg = 2;
 
+    // Auto shots (start, after path4, after path7), in milliseconds.
+    // Spin-up: before the first shot, for the flywheel and turret to reach target.
+    // Settle: before the later shots, after the robot stops. Feed: how long the feeder runs.
+    public static volatile double autoSpinUpMs = 1500;
+    public static volatile double autoSettleMs = 500;
+    public static volatile double autoFeedMs = 1500;
+
     // Nominal upward opening bounding-box centers, derived in SHOOTING.md.
     // These are calibration starting points, not surveyed practice-field coordinates.
     // LEFT/RIGHT are from each alliance's driver/operator station looking onto the field.
@@ -58,6 +59,10 @@ public final class ShootingConfig {
     public static volatile double blueLeftYIn = 56.23;
     public static volatile double blueRightXIn = 84.75;
     public static volatile double blueRightYIn = 87.77;
+
+    // Auto goal pick: switch to the other alliance goal only once it is this many inches closer
+    // (to the turret pivot) than the current one. 0 = always the closest; bigger = less flipping.
+    public static volatile double goalSwitchMarginIn = 6;
 
     // Editable distance:velocity pairs, in inches:ticks/second, strictly increasing in distance.
     // Seeds reproduce the old branch's formula at 70 and 76.05 inches; NOT measured calibration.
