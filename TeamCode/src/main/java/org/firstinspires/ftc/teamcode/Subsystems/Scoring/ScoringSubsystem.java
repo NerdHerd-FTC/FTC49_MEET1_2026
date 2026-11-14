@@ -21,6 +21,7 @@ public class ScoringSubsystem extends SubsystemBase {
     public double INIT = 0;
 
     public static double FORWARD = 1100;
+    public static double AUTOFORWARD = 1650;
     public static double BACKWARD = -1100;
     public static double kp = 140;// 170
     public static double ki = 0;
@@ -30,6 +31,7 @@ public class ScoringSubsystem extends SubsystemBase {
     public enum ShooterState{
         INIT,
         FORWARD,
+        AUTOFORWARD,
         BACKWARD
     }
 
@@ -67,6 +69,9 @@ public class ScoringSubsystem extends SubsystemBase {
                 break;
             case BACKWARD:
                 vel = BACKWARD;
+                break;
+            case AUTOFORWARD:
+                vel = AUTOFORWARD;
                 break;
         }
         ShooterLeft.setVelocity(vel);

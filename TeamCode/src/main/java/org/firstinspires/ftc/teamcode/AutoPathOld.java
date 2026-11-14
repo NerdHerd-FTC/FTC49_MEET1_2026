@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-import static com.pedropathing.api.Paths.*;
 import com.pedropathing.api.Paths;
 
 import com.pedropathing.api.PoseFactory;
@@ -23,7 +22,7 @@ import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringSubsystem;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 
 @Autonomous(name = "AutoPath1", group = "Autonomous")
-public class AutoPath extends LinearOpMode {
+public class AutoPathOld extends LinearOpMode {
 
     private Follower follower;
     private ScoringSubsystem shooter;
@@ -57,17 +56,17 @@ public class AutoPath extends LinearOpMode {
                 shootBalls(),
                 waitMs(3000),
                 stopShoot(),
-                waitMs(1500)
-                //follow(follower, path4()),
-                //follow(follower, path5()),
-                //follow(follower, path6())
+                waitMs(1500),
+                follow(follower, path1()),
+                follow(follower, path2()),
+                follow(follower, path3())
         );
     }
 
 
 
     private Command shootStart() {
-        return instant(() -> shooter.setShooterState(ScoringSubsystem.ShooterState.FORWARD))
+        return instant(() -> shooter.setShooterState(ScoringSubsystem.ShooterState.AUTOFORWARD))
                 .requiring(shooter);
     }
     private Command flowerInit() {
@@ -171,16 +170,16 @@ public class AutoPath extends LinearOpMode {
         return Paths.curve(point3Start, point3Control1, point3).constant(point3Start);
     }
 
-    /*public Path path4() {
-        return Paths.curve(point3, point4Control1, point4).tangent();
-    }
-
-    public Path path5() {
-        return Paths.line(point4, point5).tangent();
-    }
-
-    public Path path6() {
-        return Paths.line(point5, point6).reverseTangent();
-    }*/
+//    public Path path4() {
+//        return Paths.curve(point3, point4Control1, point4).tangent();
+//    }
+//
+//    public Path path5() {
+//        return Paths.line(point4, point5).tangent();
+//    }
+//
+//    public Path path6() {
+//        return Paths.line(point5, point6).reverseTangent();
+//    }*/
 }
 
