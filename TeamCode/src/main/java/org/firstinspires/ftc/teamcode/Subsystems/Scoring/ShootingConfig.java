@@ -19,7 +19,7 @@ public final class ShootingConfig {
     public static volatile double blueResetHeadingDeg = 0;
 
     // Turret pivot relative to Pedro's robot reference point. Zero offsets are placeholders.
-    public static volatile double shooterForwardIn = 0;
+    public static volatile double shooterForwardIn = 1;
     public static volatile double shooterLeftIn = 0;
     // Shooter direction at turret angle 0 relative to robot forward; CCW positive.
     public static volatile double shooterYawOffsetDeg = 0;
@@ -30,13 +30,13 @@ public final class ShootingConfig {
     // Flip turretReversed if positive power turns the turret clockwise.
     // Limits may span up to 720 deg; wider than 360 lets the turret wrap around.
     public static volatile double turretStartDeg = 0;
-    public static volatile double turretTicksPerDeg = 1.494;
+    public static volatile double turretTicksPerDeg = 5.9444;
     public static volatile boolean turretReversed = false;
-    public static volatile double turretMinDeg = -180;
-    public static volatile double turretMaxDeg = 180;
+    public static volatile double turretMinDeg = -90;
+    public static volatile double turretMaxDeg = 90;
     // PID on angle error in degrees -> motor power.
-    public static volatile double turretKp = 0.02;
-    public static volatile double turretKi = 0;
+    public static volatile double turretKp = 0.1;
+    public static volatile double turretKi = 0.01;
     public static volatile double turretKd = 0.001;
     public static volatile double turretMaxPower = 0.6;
     public static volatile double turretToleranceDeg = 2;
