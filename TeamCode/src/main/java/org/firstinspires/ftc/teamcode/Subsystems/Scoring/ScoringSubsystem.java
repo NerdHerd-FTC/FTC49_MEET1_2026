@@ -15,9 +15,7 @@ import org.firstinspires.ftc.teamcode.Subsystems.Robot.MyRobot;
 @Configurable
 public class ScoringSubsystem extends SubsystemBase {
     public DcMotorEx ShooterLeft;
-    public DcMotorEx ShooterRight;
     public CRServo ShooterServo1;
-//    public CRServo ShooterServo2;
     public double INIT = 0;
 
     public static double FORWARD = 1200;
@@ -36,13 +34,9 @@ public class ScoringSubsystem extends SubsystemBase {
     }
 
     public ScoringSubsystem (HardwareMap hardwareMap){
-        this.ShooterLeft = hardwareMap.get(DcMotorEx.class, "ShooterLeft");
+        this.ShooterLeft = hardwareMap.get(DcMotorEx.class, "ShooterMotor");
         this.ShooterLeft.setVelocityPIDFCoefficients(kp,ki,kd,kf);
         this.ShooterLeft.setDirection(DcMotorSimple.Direction.FORWARD);
-
-        this.ShooterRight = hardwareMap.get(DcMotorEx.class, "ShooterRight");
-        this.ShooterRight.setVelocityPIDFCoefficients(kp, ki, kd, kf);
-        this.ShooterRight.setDirection(DcMotorSimple.Direction.REVERSE);
 
         this.ShooterServo1 = hardwareMap.get(CRServo.class, "ShooterServo");
         this.ShooterServo1.setDirection(CRServo.Direction.FORWARD);
@@ -75,7 +69,6 @@ public class ScoringSubsystem extends SubsystemBase {
                 break;
         }
         ShooterLeft.setVelocity(vel);
-        ShooterRight.setVelocity(vel);
     }
 
 }

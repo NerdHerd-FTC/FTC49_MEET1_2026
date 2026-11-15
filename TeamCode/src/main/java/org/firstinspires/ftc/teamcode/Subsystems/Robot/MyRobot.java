@@ -20,10 +20,13 @@ import org.firstinspires.ftc.teamcode.Subsystems.Intake.Intake;
 import org.firstinspires.ftc.teamcode.Subsystems.Intake.Intake.IntakeState;
 import org.firstinspires.ftc.teamcode.Subsystems.Intake.IntakeCommands.ActuateFlowerCommand;
 import org.firstinspires.ftc.teamcode.Subsystems.Intake.IntakeCommands.ActuateIntakeCommand;
+import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringCommands.AimTurretCommand;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringCommands.SpinScoringIntakeCommand;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringCommands.SpinShooterCommand;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringIntakeSubsystem;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringSubsystem;
+import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ShotTargeting;
+import org.firstinspires.ftc.teamcode.Subsystems.Scoring.TurretSubsystem;
 
 import java.util.function.BooleanSupplier;
 
@@ -33,6 +36,7 @@ public class MyRobot extends Robot {
     ScoringSubsystem shooter;
     ScoringIntakeSubsystem scoringIntake;
     FlowerIntake flowerIntake;
+    TurretSubsystem turretSubsystem;
     DefaultDriveCommand defaultDriveCommand;
     SlowModeCommand slowModeCommand;
 
@@ -44,6 +48,7 @@ public class MyRobot extends Robot {
     public GamepadEx driver;
     public GamepadEx operator;
     public BooleanSupplier flowerStarted;
+    private ShotTargeting.Solution shot;
 
     public enum TeleopMode {
         FIELD,
@@ -65,6 +70,7 @@ public class MyRobot extends Robot {
             shooter = new ScoringSubsystem(this.hardwareMap);
             scoringIntake = new ScoringIntakeSubsystem(this.hardwareMap);
             flowerIntake = new FlowerIntake(this.hardwareMap);
+            turretSubsystem = new TurretSubsystem(this.hardwareMap, true);
             drive.setFieldOriented(true);
 
             defaultDriveCommand = new DefaultDriveCommand(drive,
@@ -82,6 +88,7 @@ public class MyRobot extends Robot {
             CommandScheduler.getInstance().setDefaultCommand(drive, defaultDriveCommand);
             CommandScheduler.getInstance().setDefaultCommand(shooter, new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD));
             CommandScheduler.getInstance().setDefaultCommand(intake, new ActuateIntakeCommand(intake, IntakeState.FORWARD));
+            CommandScheduler.getInstance().setDefaultCommand(turretSubsystem, new AimTurretCommand(turretSubsystem, () -> shot));
             Button driverSlowMode = new GamepadButton(driver, GamepadKeys.Button.LEFT_BUMPER);
             Button shooterStart = new GamepadButton(operator, GamepadKeys.Button.RIGHT_BUMPER);
             Button intakeRestart = new GamepadButton(operator, GamepadKeys.Button.DPAD_UP);
