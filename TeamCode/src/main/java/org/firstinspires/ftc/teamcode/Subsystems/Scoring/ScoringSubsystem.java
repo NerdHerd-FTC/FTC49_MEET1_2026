@@ -20,10 +20,10 @@ public class ScoringSubsystem extends SubsystemBase {
 //    public CRServo ShooterServo2;
     public double INIT = 0;
 
-    public static double FORWARD = 1100;
+    public static double FORWARD = 1200;
     public static double AUTOFORWARD = 1650;
     public static double BACKWARD = -1100;
-    public static double kp = 140;// 170
+    public static double kp = 150;// 170
     public static double ki = 0;
     public static double kd = 0;
     public static double kf = 0;// 0

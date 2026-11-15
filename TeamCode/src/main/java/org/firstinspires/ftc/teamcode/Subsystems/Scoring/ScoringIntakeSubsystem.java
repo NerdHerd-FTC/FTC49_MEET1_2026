@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.Subsystems.Scoring;
 
 import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.bylazar.configurables.annotations.Configurable;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -12,6 +13,7 @@ import org.firstinspires.ftc.teamcode.Subsystems.Robot.MyRobot;
 @Configurable
 public class ScoringIntakeSubsystem extends SubsystemBase {
     public DcMotor IntakeBack;
+    public CRServo IndexServo;
     public double INIT = 0;
     public static double SHOOT = -1;
     public static double REVERSE = 1;
@@ -26,6 +28,8 @@ public class ScoringIntakeSubsystem extends SubsystemBase {
     public ScoringIntakeSubsystem(HardwareMap hardwareMap){
         this.IntakeBack = hardwareMap.get(DcMotor.class, "IntakeFront");
         IntakeBack.setDirection(DcMotorSimple.Direction.FORWARD);
+
+        this.IndexServo = hardwareMap.get(CRServo.class, "IndexServo");
     }
 
 
@@ -43,5 +47,6 @@ public class ScoringIntakeSubsystem extends SubsystemBase {
                 break;
         }
         IntakeBack.setPower(vel);
+        IndexServo.setPower(vel);
     }
 }
