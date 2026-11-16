@@ -5,7 +5,7 @@ import com.pedropathing.math.Pose;
 
 
 /** Picks the nearer of an alliance's two goals each loop and calculates the shot for it. */
-public final class GoalTracking {
+public final class GoalTracker {
     private final ShotTargeting targeting = new ShotTargeting();
     private boolean left;
     private boolean picked;

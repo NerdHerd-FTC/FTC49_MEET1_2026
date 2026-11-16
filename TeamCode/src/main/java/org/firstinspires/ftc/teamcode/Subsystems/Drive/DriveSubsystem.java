@@ -21,6 +21,7 @@ import org.firstinspires.ftc.teamcode.Subsystems.Robot.MyRobot;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 
 public class DriveSubsystem extends SubsystemBase {
+    private final double fieldOffsetRadians;
     private MyRobot robot;
     private Follower follower;
     public boolean fieldOriented = true;
@@ -39,10 +40,12 @@ public class DriveSubsystem extends SubsystemBase {
                 // Add mechanism commands here
         );
     }
-    public DriveSubsystem(MyRobot robot){
-        follower = Constants.create(robot.hardwareMap);
+    public DriveSubsystem(HardwareMap hardwareMap, Pose startPose, double fieldOffsetRadians) {
+        follower = Constants.create(hardwareMap);
         follower.setPose(startPose);
+        this.fieldOffsetRadians = fieldOffsetRadians;
     }
+
 
     public void setDrivePower(double leftX, double leftY, double rightX){
         if (fieldOriented) {
@@ -70,6 +73,11 @@ public class DriveSubsystem extends SubsystemBase {
         this.fieldOriented = fieldOriented;
     }
     public boolean isReady() { return follower != null; }
+
+    public void update(){follower.update();}
+
+    public Pose getPose(){return follower.pose();}
+    public void setPose(Pose pose){follower.setPose(pose);}
 
     public void driveTo() {
         Scheduler.reset();

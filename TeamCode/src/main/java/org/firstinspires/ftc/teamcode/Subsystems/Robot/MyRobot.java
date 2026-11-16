@@ -8,6 +8,7 @@ import com.arcrobotics.ftclib.command.button.Button;
 import com.arcrobotics.ftclib.command.button.GamepadButton;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
+import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
@@ -20,6 +21,7 @@ import org.firstinspires.ftc.teamcode.Subsystems.Intake.Intake;
 import org.firstinspires.ftc.teamcode.Subsystems.Intake.Intake.IntakeState;
 import org.firstinspires.ftc.teamcode.Subsystems.Intake.IntakeCommands.ActuateFlowerCommand;
 import org.firstinspires.ftc.teamcode.Subsystems.Intake.IntakeCommands.ActuateIntakeCommand;
+import org.firstinspires.ftc.teamcode.Subsystems.Scoring.GoalTracker;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringCommands.AimTurretCommand;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringCommands.SpinScoringIntakeCommand;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringCommands.SpinShooterCommand;
@@ -27,6 +29,7 @@ import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringIntakeSubsystem;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringSubsystem;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ShotTargeting;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.TurretSubsystem;
+import org.firstinspires.ftc.teamcode.pedro.PoseStorage;
 
 import java.util.function.BooleanSupplier;
 
@@ -39,6 +42,7 @@ public class MyRobot extends Robot {
     TurretSubsystem turretSubsystem;
     DefaultDriveCommand defaultDriveCommand;
     SlowModeCommand slowModeCommand;
+    Pose saved;
 
     public LinearOpMode opMode;
 
@@ -47,30 +51,39 @@ public class MyRobot extends Robot {
 
     public GamepadEx driver;
     public GamepadEx operator;
-    public BooleanSupplier flowerStarted;
+    private final GoalTracker goals = new GoalTracker();
+    private final boolean fromSavedPose;
     private ShotTargeting.Solution shot;
+    private String mode = "Manual drive";
+    private final Alliance alliance;
+
 
     public enum TeleopMode {
         FIELD,
         ROBOT
     }
-    public MyRobot (LinearOpMode opMode, TeleopMode mode) {
+    public MyRobot (LinearOpMode opMode, TeleopMode mode, Alliance alliance) {
         this.opMode = opMode;
         this.hardwareMap = opMode.hardwareMap;
         this.telemetry = opMode.telemetry;
         this.driver = new GamepadEx(opMode.gamepad1);
         this.operator = new GamepadEx(opMode.gamepad2);
+        this.alliance = alliance;
+        this.saved = alliance.savedPose();
+        fromSavedPose = saved != null;
         initTele(mode);
     }
 
     public void initTele (TeleopMode mode){
         if (mode == TeleopMode.FIELD){
-            drive = new DriveSubsystem(this);
+            drive = new DriveSubsystem(this.hardwareMap, fromSavedPose ? saved : alliance.startPose(),
+                    alliance.driveOffsetRadians());
+
             intake = new Intake(this.hardwareMap);
             shooter = new ScoringSubsystem(this.hardwareMap);
             scoringIntake = new ScoringIntakeSubsystem(this.hardwareMap);
             flowerIntake = new FlowerIntake(this.hardwareMap);
-            turretSubsystem = new TurretSubsystem(this.hardwareMap, true);
+            turretSubsystem = new TurretSubsystem(this.hardwareMap, !PoseStorage.turretZeroed);
             drive.setFieldOriented(true);
 
             defaultDriveCommand = new DefaultDriveCommand(drive,
@@ -138,7 +151,8 @@ public class MyRobot extends Robot {
                             ));*/
 
         }if (mode == TeleopMode.ROBOT){
-            drive = new DriveSubsystem(this);
+            drive = new DriveSubsystem(opMode.hardwareMap, fromSavedPose ? saved : alliance.startPose(),
+                    alliance.driveOffsetRadians());
             intake = new Intake(this.hardwareMap);
             shooter = new ScoringSubsystem(this.hardwareMap);
             scoringIntake = new ScoringIntakeSubsystem(this.hardwareMap);
@@ -204,5 +218,25 @@ public class MyRobot extends Robot {
 
         }
     }
+    public void update() {
+        drive.update();
+        Pose pose = drive.getPose();
+        // Saved every loop so the next TeleOp run resumes from here, not from an old auto pose.
+        alliance.savePose(pose);
+        // Goals are rebuilt every loop so Panels edits apply live.
+        shot = goals.update(pose, alliance.leftGoal(), alliance.rightGoal());
+        // FTCLib applies live PIDF in periodic(), polls buttons, and runs the commands.
+        run();
+    }
+
+
+    /** Driver Y: snap to the measured corner pose. Returns false while it is still unset. */
+    public boolean resetPose() {
+        Pose pose = alliance.resetPose();
+        if (pose == null) return false;
+        drive.setPose(pose);
+        return true;
+    }
+
 
 }
