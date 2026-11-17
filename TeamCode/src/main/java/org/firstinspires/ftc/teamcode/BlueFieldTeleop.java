@@ -7,9 +7,6 @@ import org.firstinspires.ftc.teamcode.Subsystems.Robot.Alliance;
 import org.firstinspires.ftc.teamcode.Subsystems.Robot.MyRobot;
 
 @TeleOp(name = "BLUE_FIELD", group = "AA_Drive_Code")
-public class BlueFieldTeleop extends CommandOpMode {
-    @Override
-    public void initialize(){
-        MyRobot robot = new MyRobot(this, MyRobot.TeleopMode.FIELD, Alliance.BLUE);
-    }
+public class BlueFieldTeleop extends AllianceTeleOp {
+    @Override protected Alliance alliance() { return Alliance.BLUE; }
 }

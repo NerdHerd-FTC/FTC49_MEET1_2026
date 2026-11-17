@@ -14,9 +14,9 @@ import org.firstinspires.ftc.teamcode.Subsystems.Robot.MyRobot;
 public class ScoringIntakeSubsystem extends SubsystemBase {
     public DcMotor IntakeBack;
     public CRServo IndexServo;
-    public double INIT = 0;
-    public static double SHOOT = -1;
-    public static double REVERSE = 1;
+    public double[] INIT = {0,0};
+    public static double[] SHOOT = {-0.5, -1};
+    public static double[] REVERSE = {0.5, 0};
 
 
     public enum ScoringIntakeState{
@@ -30,11 +30,12 @@ public class ScoringIntakeSubsystem extends SubsystemBase {
         IntakeBack.setDirection(DcMotorSimple.Direction.FORWARD);
 
         this.IndexServo = hardwareMap.get(CRServo.class, "IndexServo");
+        IndexServo.setDirection(DcMotorSimple.Direction.REVERSE);
     }
 
 
     public void setScoringIntakeState (ScoringIntakeState state) {
-        double vel = 0;
+        double[] vel = {};
         switch (state) {
             case INIT:
                 vel = INIT;
@@ -46,7 +47,7 @@ public class ScoringIntakeSubsystem extends SubsystemBase {
                 vel = REVERSE;
                 break;
         }
-        IntakeBack.setPower(vel);
-        IndexServo.setPower(vel);
+        IntakeBack.setPower(vel[0]);
+        IndexServo.setPower(vel[1]);
     }
 }

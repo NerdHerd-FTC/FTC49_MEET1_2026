@@ -76,6 +76,8 @@ public class MyRobot extends Robot {
 
     public void initTele (TeleopMode mode){
         if (mode == TeleopMode.FIELD){
+            reset();
+            enable();
             drive = new DriveSubsystem(this.hardwareMap, fromSavedPose ? saved : alliance.startPose(),
                     alliance.driveOffsetRadians());
 
@@ -85,7 +87,6 @@ public class MyRobot extends Robot {
             flowerIntake = new FlowerIntake(this.hardwareMap);
             turretSubsystem = new TurretSubsystem(this.hardwareMap, !PoseStorage.turretZeroed);
             drive.setFieldOriented(true);
-
             defaultDriveCommand = new DefaultDriveCommand(drive,
                     driver::getLeftX,
                     driver::getLeftY,
@@ -101,7 +102,7 @@ public class MyRobot extends Robot {
             CommandScheduler.getInstance().setDefaultCommand(drive, defaultDriveCommand);
             CommandScheduler.getInstance().setDefaultCommand(shooter, new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD));
             CommandScheduler.getInstance().setDefaultCommand(intake, new ActuateIntakeCommand(intake, IntakeState.FORWARD));
-            CommandScheduler.getInstance().setDefaultCommand(turretSubsystem, new AimTurretCommand(turretSubsystem, () -> shot));
+            turretSubsystem.setDefaultCommand(new AimTurretCommand(turretSubsystem, () -> shot));
             Button driverSlowMode = new GamepadButton(driver, GamepadKeys.Button.LEFT_BUMPER);
             Button shooterStart = new GamepadButton(operator, GamepadKeys.Button.RIGHT_BUMPER);
             Button intakeRestart = new GamepadButton(operator, GamepadKeys.Button.DPAD_UP);
@@ -158,7 +159,9 @@ public class MyRobot extends Robot {
             scoringIntake = new ScoringIntakeSubsystem(this.hardwareMap);
             flowerIntake = new FlowerIntake(this.hardwareMap);
             drive.setFieldOriented(false);
-
+            update();
+            reset();
+            enable();
             defaultDriveCommand = new DefaultDriveCommand(drive,
                     driver::getLeftX,
                     driver::getLeftY,
