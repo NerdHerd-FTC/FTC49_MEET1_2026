@@ -1,21 +1,21 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.pedropathing.api.Paths;
-
-import com.pedropathing.api.PoseFactory;
-import com.pedropathing.follower.Follower;
-import com.pedropathing.math.Pose;
-import com.pedropathing.paths.Path;
-import com.pedropathing.ivy.Command;
-import com.pedropathing.ivy.Scheduler;
 import static com.pedropathing.ivy.Scheduler.schedule;
-import static com.pedropathing.ivy.commands.Commands.*;
+import static com.pedropathing.ivy.commands.Commands.instant;
+import static com.pedropathing.ivy.commands.Commands.waitMs;
 import static com.pedropathing.ivy.groups.Groups.sequential;
 import static com.pedropathing.ivy.pedro.PedroCommands.follow;
+
+import com.pedropathing.api.Paths;
+import com.pedropathing.api.PoseFactory;
+import com.pedropathing.follower.Follower;
+import com.pedropathing.ivy.Command;
+import com.pedropathing.ivy.Scheduler;
+import com.pedropathing.math.Pose;
+import com.pedropathing.paths.Path;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-import org.firstinspires.ftc.teamcode.Subsystems.Intake.FlowerIntake;
 import org.firstinspires.ftc.teamcode.Subsystems.Intake.Intake;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringIntakeSubsystem;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringSubsystem;
@@ -28,7 +28,6 @@ public class Lillian extends LinearOpMode {
     private ScoringSubsystem shooter;
     private Intake intake;
     private ScoringIntakeSubsystem scoringIntake;
-    private FlowerIntake flower;
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
@@ -54,7 +53,6 @@ public class Lillian extends LinearOpMode {
     // Autonomous routine
     public Command autoRoutine() {
         return sequential(
-                flowerInit(),
                 shootStart(),
                 intakeBalls(),
                 waitMs(3000),
@@ -71,29 +69,20 @@ public class Lillian extends LinearOpMode {
                 waitMs(3000),
                 stopShoot(),
                 waitMs(1500),
-                flowerStart(),
                 follow(follower, path5()),
-                flowerInit(),
                 follow(follower, path6()),
                 waitMs(3000),
                 shootBalls(),
                 waitMs(3000),
                 stopShoot(),
                 waitMs(1500),
-                follow(follower, path7())
+                follow(follower, path7()),
+                follow(follower, path8())
         );
     }
     private Command shootStart() {
         return instant(() -> shooter.setShooterState(ScoringSubsystem.ShooterState.FORWARD))
                 .requiring(shooter);
-    }
-    private Command flowerInit() {
-        return instant(() -> flower.setState(FlowerIntake.FlowerState.RETRACT))
-                .requiring(flower);
-    }
-    private Command flowerStart() {
-        return instant(() -> flower.setState(FlowerIntake.FlowerState.INTAKE))
-                .requiring(flower);
     }
     private Command intakeBalls() {
         /*return Command.build()
@@ -104,7 +93,7 @@ public class Lillian extends LinearOpMode {
                     return true;
                 })
                 .requiring(intake);*/
-        return instant(() -> intake.setState(Intake.IntakeState.SHOOT))
+        return instant(() -> intake.setState(Intake.IntakeState.BACKWARD))
                 .requiring(intake);
 
     }
@@ -146,7 +135,6 @@ public class Lillian extends LinearOpMode {
         intake = new Intake(hardwareMap);
         scoringIntake = new ScoringIntakeSubsystem(hardwareMap);
         shooter = new ScoringSubsystem(hardwareMap);
-        flower = new FlowerIntake(hardwareMap);
 
         waitForStart();
         schedule(autoRoutine());

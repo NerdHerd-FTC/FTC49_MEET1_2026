@@ -15,7 +15,7 @@ public class ScoringIntakeSubsystem extends SubsystemBase {
     public DcMotor IntakeBack;
     public CRServo IndexServo;
     public double[] INIT = {0,0};
-    public static double[] SHOOT = {-0.5, -1};
+    public static double[] SHOOT = {-1, -0.5};
     public static double[] REVERSE = {0.5, 0};
 
 

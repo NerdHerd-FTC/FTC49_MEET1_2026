@@ -180,6 +180,7 @@ public class MyRobot extends Robot {
             Button driverSlowMode = new GamepadButton(driver, GamepadKeys.Button.LEFT_BUMPER);
             Button shooterStart = new GamepadButton(operator, GamepadKeys.Button.RIGHT_BUMPER);
             Button intakeRestart = new GamepadButton(operator, GamepadKeys.Button.DPAD_UP);
+            Button testStart = new GamepadButton(operator, GamepadKeys.Button.LEFT_BUMPER);
             Button intakeReverse = new GamepadButton(driver, GamepadKeys.Button.X);
             Button flowerStart = new GamepadButton(driver, GamepadKeys.Button.Y);
 
@@ -195,9 +196,15 @@ public class MyRobot extends Robot {
                             new ParallelCommandGroup
                                     (
                                             new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD),
+                                            new ActuateIntakeCommand(intake, IntakeState.SHOOT),
                                             new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.SHOOT)
                                     ))
-                    .whenReleased(new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT));
+                    .whenReleased(
+                            new ParallelCommandGroup(
+                                    new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT),
+                                    new ActuateIntakeCommand(intake, IntakeState.FORWARD)
+                            )
+                    );
 
             intakeReverse
                     .whenPressed(
@@ -217,6 +224,20 @@ public class MyRobot extends Robot {
                     .whenPressed(new ActuateFlowerCommand(flowerIntake, FlowerIntake.FlowerState.INTAKE))
                     .whenReleased(new ActuateFlowerCommand(flowerIntake, FlowerIntake.FlowerState.RETRACT));
 
+            testStart
+                    .whenPressed(
+                            new ParallelCommandGroup
+                                    (
+                                            new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD),
+                                            new ActuateIntakeCommand(intake, IntakeState.SHOOT),
+                                            new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.SHOOT)
+                                    ))
+                    .whenReleased(
+                            new ParallelCommandGroup(
+                                    new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT),
+                                    new ActuateIntakeCommand(intake, IntakeState.FORWARD)
+                            )
+                    );
 
 
         }

@@ -13,7 +13,7 @@ public class Intake extends SubsystemBase{
     public double INIT = 0;
 
     public double FORWARD = 1.0;
-    public double SHOOT = 1.0;
+    public double SHOOT = 0.5;
     public double BACKWARD = -1;
 
     public enum IntakeState{

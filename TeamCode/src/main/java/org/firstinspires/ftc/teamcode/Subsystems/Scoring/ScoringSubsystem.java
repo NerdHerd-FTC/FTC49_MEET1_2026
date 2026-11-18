@@ -18,19 +18,21 @@ public class ScoringSubsystem extends SubsystemBase {
     public CRServo ShooterServo1;
     public double INIT = 0;
 
-    public static double FORWARD = 1200;
-    public static double AUTOFORWARD = 1650;
-    public static double BACKWARD = -1200;
-    public static double kp = 150;// 170
+    public static double FORWARD = 970;
+    public static double TEST = 800;
+    public static double AUTOFORWARD = 1250;
+    public static double BACKWARD = -970;
+    public static double kp = 135;// 170
     public static double ki = 0;
-    public static double kd = 0;
+    public static double kd = 0.001;
     public static double kf = 0;// 0
 
     public enum ShooterState{
         INIT,
         FORWARD,
         AUTOFORWARD,
-        BACKWARD
+        BACKWARD,
+        TEST
     }
 
     public ScoringSubsystem (HardwareMap hardwareMap){
@@ -66,6 +68,9 @@ public class ScoringSubsystem extends SubsystemBase {
                 break;
             case AUTOFORWARD:
                 vel = AUTOFORWARD;
+                break;
+            case TEST:
+                vel = TEST;
                 break;
         }
         ShooterLeft.setVelocity(vel);
