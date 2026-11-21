@@ -2,8 +2,11 @@ package org.firstinspires.ftc.teamcode.Subsystems.Robot;
 
 import com.arcrobotics.ftclib.command.CommandScheduler;
 import com.arcrobotics.ftclib.command.ConditionalCommand;
+import com.arcrobotics.ftclib.command.InstantCommand;
 import com.arcrobotics.ftclib.command.ParallelCommandGroup;
 import com.arcrobotics.ftclib.command.Robot;
+import com.arcrobotics.ftclib.command.SequentialCommandGroup;
+import com.arcrobotics.ftclib.command.WaitCommand;
 import com.arcrobotics.ftclib.command.button.Button;
 import com.arcrobotics.ftclib.command.button.GamepadButton;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
@@ -60,7 +63,8 @@ public class MyRobot extends Robot {
 
     public enum TeleopMode {
         FIELD,
-        ROBOT
+        ROBOT,
+        TEST
     }
     public MyRobot (LinearOpMode opMode, TeleopMode mode, Alliance alliance) {
         this.opMode = opMode;
@@ -100,14 +104,20 @@ public class MyRobot extends Robot {
             );
             flowerIntake.setState(FlowerIntake.FlowerState.RETRACT);
             CommandScheduler.getInstance().setDefaultCommand(drive, defaultDriveCommand);
-            CommandScheduler.getInstance().setDefaultCommand(shooter, new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD));
-            CommandScheduler.getInstance().setDefaultCommand(intake, new ActuateIntakeCommand(intake, IntakeState.FORWARD));
-            turretSubsystem.setDefaultCommand(new AimTurretCommand(turretSubsystem, () -> shot));
+            shooter.setShooterState(ScoringSubsystem.ShooterState.FORWARD);
+            intake.setState(IntakeState.FORWARD);
+            turretSubsystem.setDefaultCommand(
+                    new AimTurretCommand(
+                            turretSubsystem,
+                            () -> shot,
+                            operator :: getRightX));
             Button driverSlowMode = new GamepadButton(driver, GamepadKeys.Button.LEFT_BUMPER);
             Button shooterStart = new GamepadButton(operator, GamepadKeys.Button.RIGHT_BUMPER);
             Button intakeRestart = new GamepadButton(operator, GamepadKeys.Button.DPAD_UP);
             Button intakeReverse = new GamepadButton(driver, GamepadKeys.Button.X);
             Button flowerStart = new GamepadButton(driver, GamepadKeys.Button.Y);
+            Button testStart = new GamepadButton(operator, GamepadKeys.Button.LEFT_BUMPER);
+            Button driverCalibrate = new GamepadButton(driver, GamepadKeys.Button.B);
 
             driverSlowMode
                     .whenPressed(slowModeCommand)
@@ -121,9 +131,14 @@ public class MyRobot extends Robot {
                             new ParallelCommandGroup
                                     (
                                             new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD),
-                                            new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.SHOOT)
+                                            new ActuateIntakeCommand(intake, IntakeState.NECTAR),
+                                            new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.NECTAR)
                                     ))
-                            .whenReleased(new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT));
+                            .whenReleased(new ParallelCommandGroup(
+                                    new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD),
+                                    new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT),
+                                    new ActuateIntakeCommand(intake, IntakeState.FORWARD)
+                            ));
 
             intakeReverse
                     .whenPressed(
@@ -144,7 +159,25 @@ public class MyRobot extends Robot {
                     .whenReleased(new ActuateFlowerCommand(flowerIntake, FlowerIntake.FlowerState.RETRACT));
 
 
-
+            testStart
+                    .whenPressed(
+                            new SequentialCommandGroup
+                                    (
+                                            new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.TEST),
+                                            new WaitCommand(500),
+                                            new ActuateIntakeCommand(intake, IntakeState.POLLEN),
+                                            new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.POLLEN)
+                                    ))
+                    .whenReleased(
+                            new ParallelCommandGroup(
+                                    new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD),
+                                    new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT),
+                                    new ActuateIntakeCommand(intake, IntakeState.FORWARD)
+                            )
+                    );
+            driverCalibrate.whenPressed(
+                    new InstantCommand(()-> drive.setPose(alliance.resetPose))
+            );
             /*shooterStop
                     .whenPressed(new ParallelCommandGroup
                             (
@@ -175,8 +208,8 @@ public class MyRobot extends Robot {
             );
             flowerIntake.setState(FlowerIntake.FlowerState.RETRACT);
             CommandScheduler.getInstance().setDefaultCommand(drive, defaultDriveCommand);
-            CommandScheduler.getInstance().setDefaultCommand(shooter, new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD));
-            CommandScheduler.getInstance().setDefaultCommand(intake, new ActuateIntakeCommand(intake, IntakeState.FORWARD));
+            shooter.setShooterState(ScoringSubsystem.ShooterState.FORWARD);
+            intake.setState(IntakeState.FORWARD);
             Button driverSlowMode = new GamepadButton(driver, GamepadKeys.Button.LEFT_BUMPER);
             Button shooterStart = new GamepadButton(operator, GamepadKeys.Button.RIGHT_BUMPER);
             Button intakeRestart = new GamepadButton(operator, GamepadKeys.Button.DPAD_UP);
@@ -196,8 +229,8 @@ public class MyRobot extends Robot {
                             new ParallelCommandGroup
                                     (
                                             new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD),
-                                            new ActuateIntakeCommand(intake, IntakeState.SHOOT),
-                                            new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.SHOOT)
+                                            new ActuateIntakeCommand(intake, IntakeState.NECTAR),
+                                            new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.NECTAR)
                                     ))
                     .whenReleased(
                             new ParallelCommandGroup(
@@ -228,18 +261,143 @@ public class MyRobot extends Robot {
                     .whenPressed(
                             new ParallelCommandGroup
                                     (
-                                            new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD),
-                                            new ActuateIntakeCommand(intake, IntakeState.SHOOT),
-                                            new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.SHOOT)
+                                            new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.TEST),
+                                            new WaitCommand(500),
+                                            new ActuateIntakeCommand(intake, IntakeState.POLLEN),
+                                            new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.POLLEN)
                                     ))
                     .whenReleased(
                             new ParallelCommandGroup(
+                                    new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD),
                                     new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT),
                                     new ActuateIntakeCommand(intake, IntakeState.FORWARD)
                             )
                     );
 
 
+        } else if (mode == TeleopMode.TEST){
+            reset();
+            enable();
+            drive = new DriveSubsystem(this.hardwareMap, fromSavedPose ? saved : alliance.startPose(),
+                    alliance.driveOffsetRadians());
+
+            intake = new Intake(this.hardwareMap);
+            shooter = new ScoringSubsystem(this.hardwareMap);
+            scoringIntake = new ScoringIntakeSubsystem(this.hardwareMap);
+            flowerIntake = new FlowerIntake(this.hardwareMap);
+            turretSubsystem = new TurretSubsystem(this.hardwareMap, !PoseStorage.turretZeroed);
+            drive.setFieldOriented(true);
+            defaultDriveCommand = new DefaultDriveCommand(drive,
+                    driver::getLeftX,
+                    driver::getLeftY,
+                    driver::getRightX
+            );
+
+            slowModeCommand = new SlowModeCommand(drive,
+                    driver::getLeftX,
+                    driver::getLeftY,
+                    driver::getRightX
+            );
+            flowerIntake.setState(FlowerIntake.FlowerState.RETRACT);
+            CommandScheduler.getInstance().setDefaultCommand(drive, defaultDriveCommand);
+            shooter.setShooterState(ScoringSubsystem.ShooterState.FORWARD);
+            intake.setState(IntakeState.FORWARD);
+            turretSubsystem.setDefaultCommand(
+                    new AimTurretCommand(
+                            turretSubsystem,
+                            () -> shot,
+                            operator :: getRightX));
+            telemetry.addData("ShooterPower", shooter.getVelocity());
+            telemetry.addData("PollenPower", shooter.getPollenPower());
+            telemetry.addData("NectarPower", shooter.getNectarPower());
+            Button driverSlowMode = new GamepadButton(driver, GamepadKeys.Button.LEFT_BUMPER);
+            Button shooterStart = new GamepadButton(operator, GamepadKeys.Button.RIGHT_BUMPER);
+            Button intakeReverse = new GamepadButton(driver, GamepadKeys.Button.X);
+            Button flowerStart = new GamepadButton(driver, GamepadKeys.Button.Y);
+            Button testStart = new GamepadButton(operator, GamepadKeys.Button.LEFT_BUMPER);
+            Button driverCalibrate = new GamepadButton(driver, GamepadKeys.Button.B);
+            Button pollenIncrease = new GamepadButton(operator, GamepadKeys.Button.DPAD_UP);
+            Button pollenDecrease = new GamepadButton(operator, GamepadKeys.Button.DPAD_DOWN);
+            Button nectarIncrease = new GamepadButton(operator, GamepadKeys.Button.DPAD_LEFT);
+            Button nectarDecrease = new GamepadButton(operator, GamepadKeys.Button.DPAD_RIGHT);
+
+            driverSlowMode
+                    .whenPressed(slowModeCommand)
+                    .whenReleased(defaultDriveCommand);
+
+            /*autoDrive
+                    .whenPressed(new AutoDriveCommand(drive))
+                            .whenReleased(defaultDriveCommand);*/
+            shooterStart
+                    .whenPressed(
+                            new ParallelCommandGroup
+                                    (
+                                            new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD),
+                                            new ActuateIntakeCommand(intake, IntakeState.NECTAR),
+                                            new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.NECTAR)
+                                    ))
+                    .whenReleased(new ParallelCommandGroup(
+                            new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD),
+                            new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT),
+                            new ActuateIntakeCommand(intake, IntakeState.FORWARD)
+                    ));
+
+            intakeReverse
+                    .whenPressed(
+                            new ParallelCommandGroup
+                                    (
+                                            new ActuateIntakeCommand(intake, IntakeState.BACKWARD),
+                                            new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.REVERSE)
+                                    ))
+                    .whenReleased(
+                            new ParallelCommandGroup
+                                    (
+                                            new ActuateIntakeCommand(intake, IntakeState.FORWARD),
+                                            new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT)
+                                    ));
+
+            flowerStart
+                    .whenPressed(new ActuateFlowerCommand(flowerIntake, FlowerIntake.FlowerState.INTAKE))
+                    .whenReleased(new ActuateFlowerCommand(flowerIntake, FlowerIntake.FlowerState.RETRACT));
+
+
+            testStart
+                    .whenPressed(
+                            new SequentialCommandGroup
+                                    (
+                                            new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.TEST),
+                                            new WaitCommand(500),
+                                            new ActuateIntakeCommand(intake, IntakeState.POLLEN),
+                                            new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.POLLEN)
+                                    ))
+                    .whenReleased(
+                            new ParallelCommandGroup(
+                                    new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD),
+                                    new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT),
+                                    new ActuateIntakeCommand(intake, IntakeState.FORWARD)
+                            )
+                    );
+            driverCalibrate.whenPressed(
+                    new InstantCommand(()-> drive.setPose(alliance.resetPose))
+            );
+            pollenIncrease.whenPressed(
+                    new InstantCommand(()-> shooter.changePollen(10))
+            );
+            pollenDecrease.whenPressed(
+                    new InstantCommand(()-> shooter.changePollen(-10))
+            );
+            nectarIncrease.whenPressed(
+                    new InstantCommand(()-> shooter.changeNectar(10))
+            );
+            nectarDecrease.whenPressed(
+                    new InstantCommand(()-> shooter.changeNectar(-10))
+            );
+
+            /*shooterStop
+                    .whenPressed(new ParallelCommandGroup
+                            (
+                                    new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT)
+                            ));*/
         }
     }
     public void update() {

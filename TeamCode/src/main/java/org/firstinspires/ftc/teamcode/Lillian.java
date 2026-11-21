@@ -16,16 +16,19 @@ import com.pedropathing.paths.Path;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
+import org.firstinspires.ftc.teamcode.Subsystems.Intake.FlowerIntake;
 import org.firstinspires.ftc.teamcode.Subsystems.Intake.Intake;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringIntakeSubsystem;
 import org.firstinspires.ftc.teamcode.Subsystems.Scoring.ScoringSubsystem;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
+import org.firstinspires.ftc.teamcode.pedro.PoseStorage;
 
 @Autonomous(name = "Lillian", group = "Autonomous")
 public class Lillian extends LinearOpMode {
 
     private Follower follower;
     private ScoringSubsystem shooter;
+    private FlowerIntake flower;
     private Intake intake;
     private ScoringIntakeSubsystem scoringIntake;
 
@@ -36,23 +39,24 @@ public class Lillian extends LinearOpMode {
     private final Pose path1Start = poseFactory.of(55.2179, 14.3209, 90);
     private final Pose path1 = poseFactory.of(13.8439, 19.0614, -90);
     private final Pose point3Start = poseFactory.of(13.8439, 19.0614, -90);
-    private final Pose point3 = poseFactory.of(9.0438, 10.87, -90);
-    private final Pose point4Start = poseFactory.of(9.0438, 10.87, -90);
-    private final Pose point4 = poseFactory.of(59.1391, 117.1155, -90);
+    private final Pose point3 = poseFactory.of(6.0438, 10.87, -90);
+    private final Pose point4Start = poseFactory.of(6.0438, 10.87, -90);
+    private final Pose point4 = poseFactory.of(59.1391, 125.1155, -90);
     private final Pose point4Control1 = poseFactory.of(28.5932, 130.3998, 0);
-    private final Pose point5Start = poseFactory.of(59.1391, 117.1155, 90);
-    private final Pose point5 = poseFactory.of(47.0925, 132.306, 90);
+    private final Pose point5Start = poseFactory.of(59.1391, 125.1155, 90);
+    private final Pose point5 = poseFactory.of(47.0925, 115, 90);
     private final Pose point5Control1 = poseFactory.of(44.9773, 119.3234, 0);
-    private final Pose point6Start = poseFactory.of(47.0925, 132.306, 90);
-    private final Pose point6 = poseFactory.of(46.4132, 125.522, 90);
-    private final Pose point7Start = poseFactory.of(46.4132, 125.522, -90);
-    private final Pose point7 = poseFactory.of(58.8802, 116.464, -90);
-    private final Pose point8Start = poseFactory.of(58.8802, 116.464, -90);
+    private final Pose point6Start = poseFactory.of(47.0925, 115, 90);
+    private final Pose point6 = poseFactory.of(46.4132, 123.522, 90);
+    private final Pose point7Start = poseFactory.of(46.4132, 123.522, -90);
+    private final Pose point7 = poseFactory.of(58.8802, 120.464, -90);
+    private final Pose point8Start = poseFactory.of(58.8802, 120.464, -90);
     private final Pose point8 = poseFactory.of(10.743, 106.9787, 0);
 
     // Autonomous routine
     public Command autoRoutine() {
         return sequential(
+                flowerInit(),
                 shootStart(),
                 intakeBalls(),
                 waitMs(3000),
@@ -69,20 +73,31 @@ public class Lillian extends LinearOpMode {
                 waitMs(3000),
                 stopShoot(),
                 waitMs(1500),
+                flowerStart(),
                 follow(follower, path5()),
                 follow(follower, path6()),
+                waitMs(1000),
+                follow(follower, path7()),
+                flowerInit(),
                 waitMs(3000),
                 shootBalls(),
                 waitMs(3000),
                 stopShoot(),
                 waitMs(1500),
-                follow(follower, path7()),
                 follow(follower, path8())
         );
     }
     private Command shootStart() {
-        return instant(() -> shooter.setShooterState(ScoringSubsystem.ShooterState.FORWARD))
+        return instant(() -> shooter.setShooterState(ScoringSubsystem.ShooterState.AUTOFORWARD))
                 .requiring(shooter);
+    }
+    private Command flowerInit() {
+        return instant(() -> flower.setState(FlowerIntake.FlowerState.RETRACT))
+                .requiring(flower);
+    }
+    private Command flowerStart() {
+        return instant(() -> flower.setState(FlowerIntake.FlowerState.INTAKE))
+                .requiring(flower);
     }
     private Command intakeBalls() {
         /*return Command.build()
@@ -93,7 +108,7 @@ public class Lillian extends LinearOpMode {
                     return true;
                 })
                 .requiring(intake);*/
-        return instant(() -> intake.setState(Intake.IntakeState.BACKWARD))
+        return instant(() -> intake.setState(Intake.IntakeState.FORWARD))
                 .requiring(intake);
 
     }
@@ -107,7 +122,7 @@ public class Lillian extends LinearOpMode {
                     return true;
                 })
                 .requiring(scoringIntake);*/
-        return instant(() -> scoringIntake.setScoringIntakeState(ScoringIntakeSubsystem.ScoringIntakeState.SHOOT))
+        return instant(() -> scoringIntake.setScoringIntakeState(ScoringIntakeSubsystem.ScoringIntakeState.AUTO))
                 .requiring(scoringIntake);
 
     }
@@ -135,6 +150,7 @@ public class Lillian extends LinearOpMode {
         intake = new Intake(hardwareMap);
         scoringIntake = new ScoringIntakeSubsystem(hardwareMap);
         shooter = new ScoringSubsystem(hardwareMap);
+        flower = new FlowerIntake(hardwareMap);
 
         waitForStart();
         schedule(autoRoutine());
@@ -142,6 +158,8 @@ public class Lillian extends LinearOpMode {
         while (opModeIsActive()) {
             follower.update();
             Scheduler.execute();
+            PoseStorage.redPose = follower.pose();
+            PoseStorage.bluePose = follower.pose();
 
             telemetry.addData("x", follower.pose().x());
             telemetry.addData("y", follower.pose().y());

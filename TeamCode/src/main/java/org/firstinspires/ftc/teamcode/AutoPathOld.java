@@ -82,7 +82,7 @@ public class AutoPathOld extends LinearOpMode {
                     return true;
                 })
                 .requiring(intake);*/
-        return instant(() -> intake.setState(Intake.IntakeState.SHOOT))
+        return instant(() -> intake.setState(Intake.IntakeState.POLLEN))
                 .requiring(intake);
 
     }

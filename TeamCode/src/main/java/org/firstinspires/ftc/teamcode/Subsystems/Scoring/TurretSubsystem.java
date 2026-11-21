@@ -43,6 +43,10 @@ public class TurretSubsystem extends SubsystemBase {
         commandedRadians = getAngle();
     }
 
+    public void setPower (double power){
+        motor.setPower(power);
+    }
+
 
     /** Call every loop: picks the reachable equivalent of the target, then runs one PID step. */
     public void setAngle(double radians) {

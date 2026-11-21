@@ -13,7 +13,7 @@ public class FlowerIntake extends SubsystemBase{
     public double INIT = 0;
 
     public double INTAKE = 0.725;
-    public double RETRACT = 0.325;
+    public double RETRACT = 0.35;
 
     public enum FlowerState{
         INIT,

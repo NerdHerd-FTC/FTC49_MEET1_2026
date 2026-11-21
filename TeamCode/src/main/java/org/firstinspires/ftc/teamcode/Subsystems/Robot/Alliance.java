@@ -18,6 +18,8 @@ public enum Alliance {
 
     /** Red path start, from the Pedro visualizer path. Blue's start is this rotated. */
     public static final Pose RED_START = new Pose(55.2066, 7.7082, Math.toRadians(90));
+    public static final Pose RED_RESET = new Pose(6, 106, Math.toRadians(90));
+
 
 
     /** Converts a pose written in red coordinates to this alliance. */
@@ -28,6 +30,7 @@ public enum Alliance {
 
 
     public Pose startPose() { return fromRed(RED_START); }
+    public Pose resetPose = new Pose(6, 106, Math.toRadians(0));
 
 
     /** Field-centric offset so stick-forward points away from this alliance's driver station. */

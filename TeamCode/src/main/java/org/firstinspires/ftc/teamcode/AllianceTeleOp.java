@@ -12,11 +12,11 @@ public abstract class AllianceTeleOp extends LinearOpMode {
 
 
     @Override public void runOpMode() throws InterruptedException {
-        MyRobot robot = new MyRobot(this, MyRobot.TeleopMode.FIELD, alliance());
         boolean resetHeld = false;
         try {
             // Nothing is powered during INIT; the screen shows where the robot must be.
             waitForStart();
+            MyRobot robot = new MyRobot(this, MyRobot.TeleopMode.FIELD, alliance());
             while (opModeIsActive()) {
                 if (gamepad1.y && !resetHeld) robot.resetPose();
                 resetHeld = gamepad1.y;

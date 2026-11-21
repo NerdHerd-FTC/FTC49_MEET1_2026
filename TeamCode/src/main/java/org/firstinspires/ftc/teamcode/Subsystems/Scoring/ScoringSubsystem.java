@@ -18,11 +18,11 @@ public class ScoringSubsystem extends SubsystemBase {
     public CRServo ShooterServo1;
     public double INIT = 0;
 
-    public static double FORWARD = 970;
-    public static double TEST = 800;
-    public static double AUTOFORWARD = 1250;
+    public static double FORWARD = 975;
+    public static double TEST = 745;
+    public static double AUTOFORWARD = 745;
     public static double BACKWARD = -970;
-    public static double kp = 135;// 170
+    public static double kp = 185;// 170
     public static double ki = 0;
     public static double kd = 0.001;
     public static double kf = 0;// 0
@@ -50,9 +50,18 @@ public class ScoringSubsystem extends SubsystemBase {
         ShooterServo1.setPower(power);
 //        ShooterServo2.setPower(power);
     }
+    public void changePollen (double change) {
+        TEST += change;
+    }
+
+    public void changeNectar (double change) {
+        FORWARD += change;
+    }
     public double getVelocity (){
         return ShooterLeft.getVelocity();
     }
+    public double getPollenPower() {return TEST;}
+    public double getNectarPower() {return FORWARD;}
 
     public void setShooterState (ShooterState state) { //Look into follow of shooter motors
         double vel = 0;

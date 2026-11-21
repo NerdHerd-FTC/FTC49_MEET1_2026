@@ -38,8 +38,8 @@ public final class ShootingConfig {
     public static volatile double turretStartDeg = 0;
     public static volatile double turretTicksPerDeg = 5.9444;
     public static volatile boolean turretReversed = false;
-    public static volatile double turretMinDeg = -90;
-    public static volatile double turretMaxDeg = 90;
+    public static volatile double turretMinDeg = -125;
+    public static volatile double turretMaxDeg = 125;
     // PID on angle error in degrees -> motor power.
     public static volatile double turretKp = 0.1;
     public static volatile double turretKi = 0.01;

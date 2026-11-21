@@ -15,14 +15,18 @@ public class ScoringIntakeSubsystem extends SubsystemBase {
     public DcMotor IntakeBack;
     public CRServo IndexServo;
     public double[] INIT = {0,0};
-    public static double[] SHOOT = {-1, -0.5};
+    public static double[] POLLEN = {-1, -1};
+    public static double[] NECTAR = {-0.75, -0.5};
     public static double[] REVERSE = {0.5, 0};
+    public static double[] AUTO = {-0.5, -1};
 
 
     public enum ScoringIntakeState{
         INIT,
-        SHOOT,
-        REVERSE
+        POLLEN,
+        NECTAR,
+        REVERSE,
+        AUTO
     }
 
     public ScoringIntakeSubsystem(HardwareMap hardwareMap){
@@ -40,11 +44,17 @@ public class ScoringIntakeSubsystem extends SubsystemBase {
             case INIT:
                 vel = INIT;
                 break;
-            case SHOOT:
-                vel = SHOOT;
+            case POLLEN:
+                vel = POLLEN;
+                break;
+            case NECTAR:
+                vel = NECTAR;
                 break;
             case REVERSE:
                 vel = REVERSE;
+                break;
+            case AUTO:
+                vel = AUTO;
                 break;
         }
         IntakeBack.setPower(vel[0]);
