@@ -96,7 +96,7 @@ public class AutoPathOld extends LinearOpMode {
                     return true;
                 })
                 .requiring(scoringIntake);*/
-        return instant(() -> scoringIntake.setScoringIntakeState(ScoringIntakeSubsystem.ScoringIntakeState.SHOOT))
+        return instant(() -> scoringIntake.setScoringIntakeState(ScoringIntakeSubsystem.ScoringIntakeState.POLLEN))
                 .requiring(scoringIntake);
 
     }
