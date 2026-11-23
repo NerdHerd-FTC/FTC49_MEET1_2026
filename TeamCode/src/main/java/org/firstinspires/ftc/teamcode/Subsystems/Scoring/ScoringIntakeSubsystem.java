@@ -17,6 +17,7 @@ public class ScoringIntakeSubsystem extends SubsystemBase {
     public double[] INIT = {0,0};
     public static double[] POLLEN = {-1, -1};
     public static double[] NECTAR = {-0.75, -0.5};
+    public static double[] SLOWTAR = {-0.5, -0.5};
     public static double[] REVERSE = {0.5, 0};
     public static double[] AUTO = {-0.5, -1};
 
@@ -25,6 +26,7 @@ public class ScoringIntakeSubsystem extends SubsystemBase {
         INIT,
         POLLEN,
         NECTAR,
+        SLOWTAR,
         REVERSE,
         AUTO
     }
@@ -55,6 +57,9 @@ public class ScoringIntakeSubsystem extends SubsystemBase {
                 break;
             case AUTO:
                 vel = AUTO;
+                break;
+            case SLOWTAR:
+                vel = SLOWTAR;
                 break;
         }
         IntakeBack.setPower(vel[0]);

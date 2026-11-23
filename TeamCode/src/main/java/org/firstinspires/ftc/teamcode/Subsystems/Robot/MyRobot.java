@@ -59,6 +59,7 @@ public class MyRobot extends Robot {
     private ShotTargeting.Solution shot;
     private String mode = "Manual drive";
     private final Alliance alliance;
+    public boolean manual = false;
 
 
     public enum TeleopMode {
@@ -110,7 +111,8 @@ public class MyRobot extends Robot {
                     new AimTurretCommand(
                             turretSubsystem,
                             () -> shot,
-                            operator :: getRightX));
+                            operator :: getRightX,
+                            manual));
             Button driverSlowMode = new GamepadButton(driver, GamepadKeys.Button.LEFT_BUMPER);
             Button shooterStart = new GamepadButton(operator, GamepadKeys.Button.RIGHT_BUMPER);
             Button intakeRestart = new GamepadButton(operator, GamepadKeys.Button.DPAD_UP);
@@ -306,10 +308,9 @@ public class MyRobot extends Robot {
                     new AimTurretCommand(
                             turretSubsystem,
                             () -> shot,
-                            operator :: getRightX));
-            telemetry.addData("ShooterPower", shooter.getVelocity());
-            telemetry.addData("PollenPower", shooter.getPollenPower());
-            telemetry.addData("NectarPower", shooter.getNectarPower());
+                            operator :: getRightX,
+                            manual));
+
             Button driverSlowMode = new GamepadButton(driver, GamepadKeys.Button.LEFT_BUMPER);
             Button shooterStart = new GamepadButton(operator, GamepadKeys.Button.RIGHT_BUMPER);
             Button intakeReverse = new GamepadButton(driver, GamepadKeys.Button.X);
@@ -320,6 +321,9 @@ public class MyRobot extends Robot {
             Button pollenDecrease = new GamepadButton(operator, GamepadKeys.Button.DPAD_DOWN);
             Button nectarIncrease = new GamepadButton(operator, GamepadKeys.Button.DPAD_LEFT);
             Button nectarDecrease = new GamepadButton(operator, GamepadKeys.Button.DPAD_RIGHT);
+            Button turretManual = new GamepadButton(operator, GamepadKeys.Button.X);
+            Button turretAuto = new GamepadButton(operator, GamepadKeys.Button.Y);
+            Button slowNectar = new GamepadButton(operator, GamepadKeys.Button.A);
 
             driverSlowMode
                     .whenPressed(slowModeCommand)
@@ -337,7 +341,6 @@ public class MyRobot extends Robot {
                                             new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.NECTAR)
                                     ))
                     .whenReleased(new ParallelCommandGroup(
-                            new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD),
                             new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT),
                             new ActuateIntakeCommand(intake, IntakeState.FORWARD)
                     ));
@@ -377,6 +380,23 @@ public class MyRobot extends Robot {
                                     new ActuateIntakeCommand(intake, IntakeState.FORWARD)
                             )
                     );
+
+            slowNectar
+                    .whenPressed(
+                            new SequentialCommandGroup
+                                    (
+                                            new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.TEST),
+                                            new ActuateIntakeCommand(intake, IntakeState.POLLEN),
+                                            new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.SLOWTAR)
+                                    ))
+                    .whenReleased(
+                            new ParallelCommandGroup(
+                                    new SpinShooterCommand(shooter, ScoringSubsystem.ShooterState.FORWARD),
+                                    new SpinScoringIntakeCommand(scoringIntake, ScoringIntakeSubsystem.ScoringIntakeState.INIT),
+                                    new ActuateIntakeCommand(intake, IntakeState.FORWARD)
+                            )
+                    );
+
             driverCalibrate.whenPressed(
                     new InstantCommand(()-> drive.setPose(alliance.resetPose))
             );
@@ -391,6 +411,12 @@ public class MyRobot extends Robot {
             );
             nectarDecrease.whenPressed(
                     new InstantCommand(()-> shooter.changeNectar(-10))
+            );
+            turretManual.whenPressed(
+                    new InstantCommand(()-> manual = true)
+            );
+            turretAuto.whenPressed(
+                    new InstantCommand(()-> manual = false)
             );
 
             /*shooterStop
@@ -408,6 +434,11 @@ public class MyRobot extends Robot {
         // Goals are rebuilt every loop so Panels edits apply live.
         shot = goals.update(pose, alliance.leftGoal(), alliance.rightGoal());
         // FTCLib applies live PIDF in periodic(), polls buttons, and runs the commands.
+        opMode.telemetry.addData("ShooterPower", shooter.getVelocity());
+        opMode.telemetry.addData("PollenPower", shooter.getPollenPower());
+        opMode.telemetry.addData("NectarPower", shooter.getNectarPower());
+        opMode.telemetry.addData("Manual: ", manual);
+        opMode.telemetry.update();
         run();
     }
 
