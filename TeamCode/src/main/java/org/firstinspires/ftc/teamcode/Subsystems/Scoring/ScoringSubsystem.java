@@ -18,8 +18,8 @@ public class ScoringSubsystem extends SubsystemBase {
     public CRServo ShooterServo1;
     public double INIT = 0;
 
-    public static double FORWARD = 1245;
-    public static double TEST = 755;
+    public static double FORWARD = 750;
+    public static double TEST = 700;
     public static double AUTOFORWARD = 755;
     public static double BACKWARD = -970;
     public static double kp = 185;// 170
